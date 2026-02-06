@@ -1362,8 +1362,10 @@ public class ReportController {
 //        uri = "http://localhost:8080/api/imei/" + imei + "/last" + "?isGs100=" + (byImei.getDeviceType() == 1);
 
         Gs100 result = restTemplate.getForObject(uri, Gs100.class);
-        System.out.println("REZULTAT GS100: "+result.toString());
-        if (result != null && result.getRfid() != null && !result.getRfid().isEmpty()) {
+        if (result == null) {
+            return null;
+        }
+        if (result.getRfid() != null && !result.getRfid().isEmpty()) {
             List<Driver> allByIdentificationNumberIn = driverRepository.findAllByIdentificationNumberIn(new LinkedList<String>() {{
                 add(result.getRfid());
             }});
