@@ -10,7 +10,6 @@ import rs.oris.back.service.MillageService;
 import java.util.List;
 
 @RestController
-@CrossOrigin
 public class MillageController {
 
     @Autowired

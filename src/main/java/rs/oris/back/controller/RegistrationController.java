@@ -9,7 +9,6 @@ import rs.oris.back.controller.wrapper.Response;
 import java.util.List;
 
 @RestController
-@CrossOrigin
 public class RegistrationController {
 
     @Autowired

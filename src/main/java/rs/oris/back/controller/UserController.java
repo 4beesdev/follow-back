@@ -1,9 +1,9 @@
 package rs.oris.back.controller;
 
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import rs.oris.back.config.security.AuthUtil;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.NotificationApp;
 import rs.oris.back.domain.User;
@@ -16,7 +16,6 @@ import java.util.Map;
 import java.util.Set;
 
 @RestController
-@CrossOrigin
 public class UserController {
 
     @Autowired
@@ -27,11 +26,8 @@ public class UserController {
      * vraca sve korisnike u firmi
      */
     @GetMapping("/api/user")
-    public Response<Map<String, List<User>>> getAllUsers(@RequestHeader("Authorization") String auth) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Map<String, List<User>>> getAllUsers() throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         user.setPassword(null);
         return userService.getAllUsers(user);
@@ -72,12 +68,8 @@ public class UserController {
      * vraca podatke o trenutnom korisniku koji je pozvao ovu metodu
      */
     @GetMapping("/api/user/current")
-    public Response<User> getCurrentUser(@RequestHeader("Authorization") String auth) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<User> getCurrentUser() throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         user.setPassword(null);
         return new Response<>(user);
@@ -113,11 +105,8 @@ public class UserController {
      * postavlja korisnika u firmu
      */
     @PostMapping("/api/firm/{firm_id}/user")
-    public Response<User> addUser(@RequestBody User user, @RequestHeader("Authorization") String auth, @PathVariable("firm_id") int firmId) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<User> addUser(@RequestBody User user, @PathVariable("firm_id") int firmId) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user1 = userService.findByUsername(username);
         return userService.addNewUser(user, user1, firmId);
     }
@@ -126,11 +115,8 @@ public class UserController {
      * pravi novog superadmina
      */
     @PostMapping("/api/user/super")
-    public Response<User> addSuperadmin(@RequestBody User user, @RequestHeader("Authorization") String auth) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<User> addSuperadmin(@RequestBody User user) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user1 = userService.findByUsername(username);
         return userService.addNewSuperadmin(user, user1);
     }
@@ -138,11 +124,8 @@ public class UserController {
      * vraca sve superadmine
      */
     @GetMapping("/api/user/super")
-    public Response<Map<String, List<User>>> getSuperadmin(@RequestHeader("Authorization") String auth) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Map<String, List<User>>> getSuperadmin() throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user1 = userService.findByUsername(username);
         return userService.getAllSA(user1);
     }
@@ -171,11 +154,8 @@ public class UserController {
      * azurira superadmina
      */
     @PutMapping("/api/firm/{firm_id}/user/{user_id}/super")
-    public Response<User> updateSuperadmon(@PathVariable("user_id") int userId, @RequestHeader("Authorization") String auth, @RequestBody User usernew) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<User> updateSuperadmon(@PathVariable("user_id") int userId, @RequestBody User usernew) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User usercurrent = userService.findByUsername(username);
         return userService.updateSuperadmin(userId, usercurrent, usernew);
     }
@@ -195,11 +175,8 @@ public class UserController {
      * brise superadmina
      */
     @DeleteMapping("/api/user/{user_id}/super")
-    public boolean deleteSuperadming(@PathVariable("user_id") int userId, @RequestHeader("Authorization") String auth) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public boolean deleteSuperadming(@PathVariable("user_id") int userId) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user1 = userService.findByUsername(username);
         return userService.deleteSuperAdmin(userId, user1);
     }
@@ -209,11 +186,8 @@ public class UserController {
      * ili admin iz firme
      */
     @DeleteMapping("/api/firm/{firm_id}/user/{user_id}")
-    public boolean deleteUser(@PathVariable("user_id") int userId, @RequestHeader("Authorization") String auth) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public boolean deleteUser(@PathVariable("user_id") int userId) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User userCurrent = userService.findByUsername(username);
         return userService.deleteUser(userId, userCurrent);
     }
@@ -223,11 +197,8 @@ public class UserController {
      * vraca poslednjih 50 nepregledanih notifikacija korisnika
      */
     @GetMapping("/api/my/notif")
-    public Response<List<NotificationApp>> getNotifisis(@RequestHeader("Authorization") String auth) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<List<NotificationApp>> getNotifisis() throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User usercurrent = userService.findByUsername(username);
         return userService.getNotifs(usercurrent);
     }
@@ -241,11 +212,8 @@ public class UserController {
      */
     @Transactional
     @DeleteMapping("/api/my/notif/clear")
-    public boolean clearMyNotifs(@RequestHeader("Authorization") String auth) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public boolean clearMyNotifs() throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User usercurrent = userService.findByUsername(username);
         return userService.clearNotifs(usercurrent);
     }
@@ -253,11 +221,8 @@ public class UserController {
     //NOTIFIKACIJE
     //Na frontu je ovaj deo koda zakomentarisan,ovde se radi polling za notifikacije
     @GetMapping("/api/my/notif/history")
-    public Response<List<NotificationApp>> getNotifisisHistory(@RequestHeader("Authorization") String auth) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<List<NotificationApp>> getNotifisisHistory() throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User usercurrent = userService.findByUsername(username);
         return userService.getNotifsHistory(usercurrent);
     }
@@ -268,14 +233,10 @@ public class UserController {
      */
     @GetMapping("/api/my/notif/history/top/{topNumber}")
     public Response<List<NotificationApp>> getNotifisisHistoryTopN(
-            @RequestHeader("Authorization") String auth,
             @PathVariable("topNumber") Integer topNumber
 
     ) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+        String username = AuthUtil.getCurrentUsername();
         User usercurrent = userService.findByUsername(username);
         return userService.getNotifsHistoryTopN(usercurrent,topNumber);
     }
@@ -286,15 +247,11 @@ public class UserController {
      */
     @GetMapping("/api/my/notif/history/{page}/{size}")
     public Response<PaginationDTO> getNotifisisHistoryPagination(
-            @RequestHeader("Authorization") String auth,
             @PathVariable("page") Integer page,
             @PathVariable("size") Integer size
 
     ) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+        String username = AuthUtil.getCurrentUsername();
         User usercurrent = userService.findByUsername(username);
         return userService.getNotifsHistoryPagination(usercurrent,page,size);
     }
@@ -305,11 +262,8 @@ public class UserController {
      * dodeljuje vehicle group korisniku
      */
     @PostMapping("/api/my/notif/seen")
-    public Response<Boolean> getNotifisisSeen(@RequestHeader("Authorization") String auth) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Boolean> getNotifisisSeen() throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User usercurrent = userService.findByUsername(username);
         return userService.getNotifsSeen(usercurrent);
     }
@@ -320,11 +274,8 @@ public class UserController {
      * brisanje korisnika iz grupe vozila
      */
     @PostMapping("/api/firm/{firm_id}/user/{uid}/vehicle-group/{vid}/user-vehicle-group")
-    public Response<Boolean> setVehicleGroupToUser(@RequestHeader("Authorization") String auth, @PathVariable("uid") int userId, @PathVariable("vid") int vehicleGroupId) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Boolean> setVehicleGroupToUser(@PathVariable("uid") int userId, @PathVariable("vid") int vehicleGroupId) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User usercurrent = userService.findByUsername(username);
         return userService.setVehicleGroupToUser(usercurrent, userId, vehicleGroupId);
     }
@@ -334,11 +285,8 @@ public class UserController {
      */
     @Transactional
     @DeleteMapping("/api/firm/{firm_id}/user/{uid}/user-vehicle-group")
-    public Response<Boolean> deleteVehGroupId(@RequestHeader("Authorization") String auth, @PathVariable("uid") int userId) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Boolean> deleteVehGroupId(@PathVariable("uid") int userId) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User usercurrent = userService.findByUsername(username);
         return userService.deleteUVG(usercurrent, userId);
     }
@@ -348,11 +296,8 @@ public class UserController {
      * vraca vehicle groupe od korisnika
      */
     @GetMapping("/api/firm/{firm_id}/user/{user_id}/user-vehicle-group")
-    public Response<Set<VehicleGroup>> getGroups(@RequestHeader("Authorization") String auth, @PathVariable("user_id") int userId) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Set<VehicleGroup>> getGroups(@PathVariable("user_id") int userId) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User usercurrent = userService.findByUsername(username);
         return userService.getVehGroupForUser(usercurrent, userId);
     }

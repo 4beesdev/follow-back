@@ -9,7 +9,6 @@ import rs.oris.back.service.VehicleServiceLocationService;
 import java.util.List;
 
 @RestController
-@CrossOrigin
 public class VehicleServiceLocationController {
 
     @Autowired

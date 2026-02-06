@@ -15,7 +15,6 @@ import java.util.List;
  * CRUD za AddedInsurance
  */
 @RestController
-@CrossOrigin
 public class AddedInsuranceController {
 
 

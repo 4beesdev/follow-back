@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 import rs.oris.back.service.GroupPrivilegeService;
 
 @RestController
-@CrossOrigin
 public class GorupPrivilegeController {
 
     @Autowired

@@ -1,10 +1,10 @@
 package rs.oris.back.controller;
 
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import rs.oris.back.config.security.AuthUtil;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.NotificationModel;
 import rs.oris.back.domain.User;
@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 
 @RestController
-@CrossOrigin
 public class UserReportController {
 
     @Autowired
@@ -31,11 +30,8 @@ public class UserReportController {
      * vraca sve user-report-ove firme
      */
     @GetMapping("/api/firm/{firm_id}/user-report")
-    public Response<Map<String, Set<DTOUserReport>>> getAllReports(@RequestHeader("Authorization") String auth, @PathVariable("firm_id") int firmId) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Map<String, Set<DTOUserReport>>> getAllReports(@PathVariable("firm_id") int firmId) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return userReportService.getAll(user,firmId);
     }
@@ -49,11 +45,8 @@ public class UserReportController {
      * cuva novi userReport
      */
     @PostMapping("/api/firm/{firm_id}/user-report")
-    public Response<UserReport> addReport(@RequestHeader("Authorization") String auth, @RequestBody UserReport userReport, @PathVariable("firm_id") int firmId) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<UserReport> addReport(@RequestBody UserReport userReport, @PathVariable("firm_id") int firmId) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return userReportService.add(user, userReport,firmId);
     }
@@ -62,11 +55,8 @@ public class UserReportController {
      * azurira userReport
      */
     @PutMapping("/api/firm/{firm_id}/user-report/{id}")
-    public Response<UserReport> updateReport(@RequestHeader("Authorization") String auth, @RequestBody UserReport userReport, @PathVariable("id") int id) throws Exception {
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<UserReport> updateReport(@RequestBody UserReport userReport, @PathVariable("id") int id) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return userReportService.update(user, userReport, id);
     }

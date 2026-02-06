@@ -11,7 +11,6 @@ import java.util.List;
  * CRUD za kazne
  */
 @RestController
-@CrossOrigin
 public class TicketController {
 
     @Autowired

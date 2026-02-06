@@ -2430,9 +2430,11 @@ public class ReportService {
         }
         byte[] bytes = bos.toByteArray();
 
-        //Salje se na 3th pary api koji preradi to i vrati nam pdf
-        String uri = "http://167.172.187.27:3000/convert/office";
-        uri = "http://gotenberg:3000/convert/office";
+        //Salje se na 3rd party API (Gotenberg) koji preradi to i vrati nam PDF
+        String gotenbergUrl = System.getenv("GOTENBERG_URL");
+        String uri = (gotenbergUrl != null && !gotenbergUrl.isEmpty())
+                ? gotenbergUrl + "/convert/office"
+                : "http://gotenberg:3000/convert/office";
         HttpClient httpclient = new DefaultHttpClient();
         HttpPost httpPost = new HttpPost(uri);
         // FileBody uploadFilePart = new FileBody(new File(s));

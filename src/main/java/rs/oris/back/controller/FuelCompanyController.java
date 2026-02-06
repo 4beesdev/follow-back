@@ -10,7 +10,6 @@ import rs.oris.back.service.FuelCompanyService;
 import java.util.List;
 
 @RestController
-@CrossOrigin
 public class FuelCompanyController {
 
     @Autowired

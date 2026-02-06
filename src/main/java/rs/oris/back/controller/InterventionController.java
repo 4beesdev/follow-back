@@ -17,7 +17,6 @@ import java.util.List;
 
 
 @RestController
-@CrossOrigin
 public class InterventionController {
 
     @Autowired

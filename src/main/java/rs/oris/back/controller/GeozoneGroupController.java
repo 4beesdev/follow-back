@@ -1,8 +1,8 @@
 package rs.oris.back.controller;
 
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import rs.oris.back.config.security.AuthUtil;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.GeozoneGroup;
 import rs.oris.back.domain.User;
@@ -13,7 +13,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin
 public class GeozoneGroupController {
 
     @Autowired
@@ -25,14 +24,8 @@ public class GeozoneGroupController {
      * dodaje novu geozonu koju vezuje za konkretnu grupu
      */
     @PostMapping("/api/firm/{firm_id}/geozone-group")
-    public Response<GeozoneGroup> addUser(@RequestBody GeozoneGroup geozoneGroup, @RequestHeader("Authorization") String auth, @PathVariable("firm_id") int firmId) throws Exception {
-        /**
-         * provera korisnika
-         */
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<GeozoneGroup> addUser(@RequestBody GeozoneGroup geozoneGroup, @PathVariable("firm_id") int firmId) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return geozoneGroupService.addNewGeozone(geozoneGroup, user, firmId);
     }

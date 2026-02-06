@@ -10,7 +10,6 @@ import rs.oris.back.service.AparatTypeService;
 import java.util.List;
 
 @RestController
-@CrossOrigin
 public class AparatTypeController {
 
     @Autowired

@@ -10,7 +10,6 @@ import rs.oris.back.service.InvoicedTransportService;
 import java.util.List;
 
 @RestController
-@CrossOrigin
 public class InvoicedTransportController {
 
     @Autowired

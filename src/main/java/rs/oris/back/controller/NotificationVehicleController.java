@@ -1,10 +1,10 @@
 package rs.oris.back.controller;
 
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import rs.oris.back.config.security.AuthUtil;
 import rs.oris.back.controller.wrapper.Response;
 
 import rs.oris.back.domain.LatLng;
@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin
 public class NotificationVehicleController {
 
     @Autowired
@@ -60,19 +59,12 @@ public class NotificationVehicleController {
 
     @PostMapping("/api/firm/{firm_id}/notification/{notification_id}/vehicle/{vehicle_id}/user/{user_id}")
     public Response<NotificationVehicle> getAllGroupsForFirm(
-            @RequestHeader("Authorization") String auth,
             @PathVariable("notification_id") int notificationId,
             @PathVariable("vehicle_id") int vehicleId,
             @PathVariable("user_id") int userId,
             @PathVariable("firm_id") int firmId,
             @RequestBody NotifBody notifBody) throws Exception {
-        //Desifruj JWT token
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        //Iz desifrovanog tokena izvuci username
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
-        //Naci korisnika po username-u
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
 
         //Dodaj notifikaciju
@@ -83,11 +75,8 @@ public class NotificationVehicleController {
      * vraca sve notifikacije firme
      */
     @GetMapping("/api/firm/{firm_id}/notification-vehicle")
-    public Response<Map<String, List<NotificationVehicle>>> getAllFirm(@RequestHeader("Authorization") String auth , @PathVariable("firm_id") int firmId) throws Exception{
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Map<String, List<NotificationVehicle>>> getAllFirm(@PathVariable("firm_id") int firmId) throws Exception{
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return notificationVehicleService.getAll(user,firmId);
     }
@@ -95,11 +84,8 @@ public class NotificationVehicleController {
      * vraca sve licne notifikacije korisnika koji je poslao zahtev
      */
     @GetMapping("/api/firm/{firm_id}/notification-vehicle/mine")
-    public Response<Map<String, List<NotificationVehicle>>> getMyNotifications(@RequestHeader("Authorization") String auth) throws Exception{
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Map<String, List<NotificationVehicle>>> getMyNotifications() throws Exception{
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return notificationVehicleService.getMine(user);
     }

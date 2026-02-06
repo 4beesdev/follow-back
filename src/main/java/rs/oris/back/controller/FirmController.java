@@ -1,8 +1,8 @@
 package rs.oris.back.controller;
 
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import rs.oris.back.config.security.AuthUtil;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.Firm;
 
@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin
 public class FirmController {
 
     @Autowired
@@ -27,14 +26,8 @@ public class FirmController {
      * vraca sve aktivne firme ako je korisnik superadmin
      */
     @GetMapping("/api/firm")
-    public Response<Map<String, List<Firm>>> getAllFirm(@RequestHeader("Authorization") String auth) throws Exception{
-        /**
-         * provera korisnika
-         */
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Map<String, List<Firm>>> getAllFirm() throws Exception{
+        String username = AuthUtil.getCurrentUsername();
         User userCurrent = userService.findByUsername(username);
         return firmService.getAllFirm(userCurrent);
     }
@@ -56,11 +49,8 @@ public class FirmController {
      * delete
      */
     @DeleteMapping("/api/firm/{firm_id}")
-    public boolean deleteFirm(@PathVariable("firm_id") int firmId,@RequestHeader("Authorization") String auth) throws Exception{
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public boolean deleteFirm(@PathVariable("firm_id") int firmId) throws Exception{
+        String username = AuthUtil.getCurrentUsername();
         User userCurrent = userService.findByUsername(username);
         return firmService.deleteFirm(firmId,userCurrent);
     }

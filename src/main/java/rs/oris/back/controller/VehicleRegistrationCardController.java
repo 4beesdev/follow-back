@@ -11,7 +11,6 @@ import java.util.List;
  * CRUD za vehicle registration card
  */
 @RestController
-@CrossOrigin
 public class VehicleRegistrationCardController {
 
     @Autowired

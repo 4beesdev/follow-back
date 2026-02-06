@@ -10,7 +10,6 @@ import rs.oris.back.service.FirstAidService;
 import java.util.List;
 
 @RestController
-@CrossOrigin
 public class FirstAidController {
 
     @Autowired

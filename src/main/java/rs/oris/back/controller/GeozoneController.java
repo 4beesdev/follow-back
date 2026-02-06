@@ -1,9 +1,9 @@
 package rs.oris.back.controller;
 
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import rs.oris.back.config.security.AuthUtil;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.Geozone;
 import rs.oris.back.domain.User;
@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin
 public class GeozoneController {
 
     @Autowired
@@ -26,14 +25,8 @@ public class GeozoneController {
      * dodaje novu geozonu
      */
     @PostMapping("/api/firm/{firm_id}/type/{type}")
-    public Response<Geozone> addUser(@RequestBody String geozoneString, @RequestHeader("Authorization") String auth, @PathVariable("firm_id") int firmId, @PathVariable("type") String type,@RequestParam("color") String color) throws Exception {
-        /**
-         * provera korisnika
-         */
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Geozone> addUser(@RequestBody String geozoneString, @PathVariable("firm_id") int firmId, @PathVariable("type") String type,@RequestParam("color") String color) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return geozoneService.addNewGeozone(geozoneString, user, firmId, type,color);
     }
@@ -51,14 +44,8 @@ public class GeozoneController {
      */
     @Transactional
     @DeleteMapping("/api/firm/{firm_id}/geozone/{id}")
-    public boolean deleteAGeozone(@RequestHeader("Authorization") String auth, @PathVariable("id") int id) throws Exception {
-        /**
-         * provera korisnika
-         */
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public boolean deleteAGeozone(@PathVariable("id") int id) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return geozoneService.deleteAGeozone(user, id);
     }

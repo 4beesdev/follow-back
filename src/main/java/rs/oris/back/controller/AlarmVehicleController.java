@@ -1,9 +1,9 @@
 package rs.oris.back.controller;
 
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import rs.oris.back.config.security.AuthUtil;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.AlarmBE;
 import rs.oris.back.domain.AlarmVehicle;
@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin
 public class AlarmVehicleController {
 
     @Autowired
@@ -37,15 +36,9 @@ public class AlarmVehicleController {
      */
     @Transactional
     @PostMapping("/api/firm/{firm_id}/alarm/{alarm_id}/vehicle/{vehicle_id}/user/{user_id}")
-    public Response<AlarmVehicle> getAllGroupsForFirm(@RequestHeader("Authorization") String auth, @PathVariable("alarm_id") int alarmId, @PathVariable("vehicle_id") int vehicleId, @PathVariable("user_id") int userId,
+    public Response<AlarmVehicle> getAllGroupsForFirm(@PathVariable("alarm_id") int alarmId, @PathVariable("vehicle_id") int vehicleId, @PathVariable("user_id") int userId,
                                                       @RequestBody AlarmBE alarmBE) throws Exception {
-        /**
-         * provera korisnika
-         */
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
 
         return alarmVehicleService.add(user, alarmId, vehicleId, userId, alarmBE);
@@ -55,14 +48,8 @@ public class AlarmVehicleController {
      * vraca sve alarme u vozilima jedne firme / korisnika
      */
     @GetMapping("/api/firm/{firm_id}/alarm-vehicle")
-    public Response<Map<String, List<AlarmVehicle>>> getAllFirm(@RequestHeader("Authorization") String auth) throws Exception {
-        /**
-         * provera korisnika
-         */
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Map<String, List<AlarmVehicle>>> getAllFirm() throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return alarmVehicleService.getAll(user);
     }
@@ -71,14 +58,8 @@ public class AlarmVehicleController {
      * vraca sve alarme korisnika
      */
     @GetMapping("/api/firm/{firm_id}/alarm-vehicle/mine")
-    public Response<Map<String, List<AlarmVehicle>>> getMyAlarms(@RequestHeader("Authorization") String auth) throws Exception {
-        /**
-         * provera korisnika
-         */
-        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public Response<Map<String, List<AlarmVehicle>>> getMyAlarms() throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return alarmVehicleService.getMine(user);
     }

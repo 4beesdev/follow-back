@@ -1,11 +1,11 @@
 package rs.oris.back.controller;
 
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import rs.oris.back.config.security.AuthUtil;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.FuelConsumption;
 import rs.oris.back.domain.User;
@@ -17,7 +17,6 @@ import rs.oris.back.service.UserService;
 import java.util.List;
 
 @RestController
-@CrossOrigin
 public class FuelConsumptionController {
 
     @Autowired
@@ -90,11 +89,8 @@ public class FuelConsumptionController {
     }
 //Load excel file for fuel consumption
     @PostMapping("/api/firm/{firm_id}/fuel/import")
-    public ResponseEntity<FmsFuelConsumptionHolderDto> importFuelConsumption(@RequestHeader("Authorization") String jwt, @RequestPart("file") MultipartFile multipartFile, @PathVariable("firm_id") int firmId ) throws Exception {
-        String payload = jwt.substring(jwt.indexOf(".") + 1, jwt.lastIndexOf("."));
-        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
-        String decodedJson = new String(byteArray);
-        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+    public ResponseEntity<FmsFuelConsumptionHolderDto> importFuelConsumption(@RequestPart("file") MultipartFile multipartFile, @PathVariable("firm_id") int firmId ) throws Exception {
+        String username = AuthUtil.getCurrentUsername();
         User user=userService.findByUsername(username);
         return fuelConsumptionService.importFuelConsumption(multipartFile,firmId,user.getEmail());
     }

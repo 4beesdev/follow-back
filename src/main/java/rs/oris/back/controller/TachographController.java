@@ -11,7 +11,6 @@ import java.util.List;
  * Tachograph CRUD
  */
 @RestController
-@CrossOrigin
 public class TachographController {
 
     @Autowired

@@ -11,7 +11,6 @@ import java.util.List;
  * CRUd service location
  */
 @RestController
-@CrossOrigin
 public class ServiceLocationController {
 
     @Autowired
