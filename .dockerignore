@@ -1,0 +1,12 @@
+.git
+.env
+.env.*
+!.env.example
+*.md
+*.zip
+target/
+.idea/
+*.iml
+*.ipr
+*.iws
+.DS_Store

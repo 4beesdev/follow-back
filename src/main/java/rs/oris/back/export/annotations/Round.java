@@ -1,0 +1,15 @@
+package rs.oris.back.export.annotations;
+
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
+public @interface Round {
+
+
+    int roundTo() default 1;
+}

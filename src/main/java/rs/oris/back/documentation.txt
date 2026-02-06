@@ -1,0 +1,15 @@
+Notification
+Konfiguraciju notifikacija rade posebni ljudi,mislimo da su administratori  i oni mogu da
+konfigurisu notifikacije da im stuzi za neka vozila i tu mogu da vide da li je neko ugasio auto stao itd
+
+Ti imas app i prodas nekima i onda ce oni da imaju super admina koji ce moci dadodaje svojim zaposlenima notifikacije koje ce oni da prate
+Zaposleni ima mogucnost samo da gelda na mapi gde se sta nalazi
+
+Kada se gadja endpoint     @PostMapping("/api/firm/{firm_id}/notification/{notification_id}/vehicle/{vehicle_id}/user/{user_id}/{smsmail}")
+on podesava konfiguraciju za nekog usera da njemu stizu,ovo podesava admin i kaze dace useru da stizu notifikacije tog tipa za to vozilo
+
+Kada se to desi salje se iz postgresa na mongo bazu u drugi servis da bi se to pratilo
+
+NotificationModel je obj koji se salje na mongo service
+
+NotificationVehicle je obj koji se cuva na postgres service

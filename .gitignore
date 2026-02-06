@@ -1,0 +1,44 @@
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/build/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### Environment (NEVER commit) ###
+.env
+.env.local
+.env.*.local
+
+### Secrets ###
+src/main/resources/firebase.json
+*.pem
+*.ppk
+id_rsa*
+
+### OS ###
+.DS_Store
+Thumbs.db
+
+### Logs ###
+*.log
+logs/
