@@ -12,12 +12,16 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import rs.oris.back.config.MongoServerConfig;
 
+import rs.oris.back.domain.Vehicle;
+import rs.oris.back.repository.VehicleRepository;
+
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 import java.net.Socket;
 import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 /**
  * Admin health-check endpoint that probes all dependent services in parallel.
@@ -39,6 +43,9 @@ public class AdminHealthController {
 
     @Autowired
     private MongoServerConfig mongoServerConfig;
+
+    @Autowired
+    private VehicleRepository vehicleRepository;
 
     @Value("${server.port:8000}")
     private int serverPort;
@@ -203,5 +210,27 @@ public class AdminHealthController {
         }
         svc.put("responseTime", System.currentTimeMillis() - start);
         return svc;
+    }
+
+    /**
+     * Returns a lightweight mapping of all active vehicles: IMEI → registration + firm.
+     * Used by the superadmin monitoring dashboard to enrich the IMEI table with
+     * company name and registration plate without fetching full Vehicle entities.
+     */
+    @GetMapping("/vehicle-map")
+    public ResponseEntity<List<Map<String, Object>>> getVehicleMap() {
+        List<Vehicle> vehicles = vehicleRepository.findAll();
+        List<Map<String, Object>> result = vehicles.stream()
+                .filter(v -> v.getImei() != null && !v.getImei().isEmpty() && v.getDeletedDate() == null)
+                .map(v -> {
+                    Map<String, Object> entry = new LinkedHashMap<>();
+                    entry.put("imei", v.getImei());
+                    entry.put("registration", v.getRegistration() != null ? v.getRegistration() : "");
+                    entry.put("firmId", v.getFirm() != null ? v.getFirm().getFirmId() : null);
+                    entry.put("firmName", v.getFirm() != null ? v.getFirm().getName() : "Nepoznata");
+                    return entry;
+                })
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
     }
 }

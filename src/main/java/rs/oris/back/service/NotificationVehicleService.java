@@ -37,12 +37,10 @@ public class NotificationVehicleService {
 
     @Autowired
     private GroupPrivilegeRepository groupPrivilegeRepository;
-    @Autowired
-    private MongoServerConfig mongoServerConfig;
-    @Autowired
-    private RestTemplate restTemplate;
 
     /**
+    @Autowired
+    private RestTemplate restTemplate;
      * delegira delete
      */
     public boolean delete(int notificationVehicleId) {
@@ -55,9 +53,9 @@ public class NotificationVehicleService {
      * deleete
      */
     private void delteSingleNotif(int notificationVehicleId) {
+        String uri = "http://localhost:8080/api/remove/one";
+        uri = "http://142.93.164.78:8080/api/notification/remove/one";
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/notification/remove/one";
-        try {
-            ResponseEntity<String> responseEntityStr = restTemplate.postForEntity(uri, notificationVehicleId, String.class);
         } catch (Exception e) {
         }
     }
@@ -302,10 +300,10 @@ public class NotificationVehicleService {
 
 
 
+        String uri = "http://localhost:8080/api/notification/add/one";
+        uri = "http://142.93.164.78:8080/api/notification/add/one";
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/notification/add/one";
-
         try {
-            //Method to send data to mongo server
             ResponseEntity<String> responseEntityStr = restTemplate.postForEntity(uri, notificationModel, String.class);
         } catch (Exception e) {
             e.printStackTrace();
