@@ -2,6 +2,7 @@ package rs.oris.back.controller;
 
 import org.checkerframework.checker.units.qual.A;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import rs.oris.back.controller.wrapper.Response;
@@ -22,7 +23,9 @@ public class IntegrationController {
 
     @Autowired
     private ReportService reportService;
-    private String apiKey = "0802efcfeac23490c9a0c71972";
+
+    @Value("${INTEGRATION_API_KEY:}")
+    private String apiKey;
     List<String> imeiList = Arrays.asList(
             "862462034676733",
             "864547035760698",
