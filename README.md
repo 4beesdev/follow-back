@@ -37,8 +37,8 @@ src/main/java/rs/oris/back/
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `SPRING_DATASOURCE_URL` | PostgreSQL JDBC URL | `jdbc:postgresql://localhost:5432/test` |
-| `SPRING_DATASOURCE_USERNAME` | DB username | `4beesJadran` |
-| `SPRING_DATASOURCE_PASSWORD` | DB password | `NekiRandomPWD` |
+| `SPRING_DATASOURCE_USERNAME` | DB username | *(required)* |
+| `SPRING_DATASOURCE_PASSWORD` | DB password | *(required)* |
 | `ORIS_MONGO_BASE_URL` | follow-gps-data service URL | `http://follow-gps-data:8080` |
 | `JWT_SECRET` | JWT signing secret (REQUIRED in production) | auto-generated dev fallback |
 | `CORS_ALLOWED_ORIGINS` | Comma-separated allowed origins | `http://localhost:8888,...` |
