@@ -1428,8 +1428,7 @@ public class ReportController {
         if (fuelMargine == null) {
             fuelMargine = 0;
         }
-        String uri = "http://localhost:8080/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + fuelMargine;
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + fuelMargine;
 
         try {
             String result = restTemplate.getForObject(uri, String.class);
@@ -1448,8 +1447,7 @@ public class ReportController {
         if (fuelMargine == null) {
             fuelMargine = 0;
         }
-        String uri = "http://localhost:8080/api/history/1/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/1/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + fuelMargine;
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/1/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + fuelMargine;
 
         try {
             String result = restTemplate.getForObject(uri, String.class);
@@ -1468,8 +1466,7 @@ public class ReportController {
         List<TeltonikaHistoryDTO> gsHistoryDTOS = new LinkedList<>();
         Map<String, String> cacheDriverNames = new HashMap<>();
 
-        String uri = "http://localhost:8080/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
 
         try {
             ResponseEntity<Map<String, List<Teltonika>>> responseEntity = restTemplate.exchange(
@@ -1502,8 +1499,7 @@ public class ReportController {
 
     private List<GsHistoryDTO> getGs100History(String imei, long dateFromS, long dateToS) {
         List<GsHistoryDTO> gsHistoryDTOS = new LinkedList<>();
-        String uri = "http://localhost:8080/api/history/1/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/1/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/1/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
         Map<String, String> cacheDriverNames = new HashMap<>();
 
         try {
@@ -2581,12 +2577,8 @@ public class ReportController {
      * poziva spoljni api za izvestaj o vozilu za teltonika uredjaje
      */
     private String getTeltonikaMonthlyHours(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
-        String uri =
-                "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/monthly/hours";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/monthly/hours";
-
 
         String result = restTemplate.getForObject(uri, String.class);
         return result;
@@ -2596,10 +2588,7 @@ public class ReportController {
      * poziva spoljni api za izvestaj o vozilu za gs100 uredjaje
      */
     private String getGs100MonthlyHours(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
-        String uri =
-                "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/monthly/hours";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/monthly/hours";
 
 
@@ -2614,11 +2603,7 @@ public class ReportController {
      */
     private String getGs100MonthlyHoursVrv(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, int hfromsa, int mfromsa,
             int htosa, int mtosa, int hfromsu, int mfromsu, int htosu, int mtosu, int working) {
-        String uri =
-                "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/" + hfromsa + "/" + mfromsa + "/" + htosa + "/" + mtosa + "/" + hfromsu + "/" + mfromsu + "/" + htosu + "/" + mtosu + "/working/"
-                        + working;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/" + hfromsa + "/" + mfromsa + "/" + htosa + "/" + mtosa + "/" + hfromsu + "/" + mfromsu + "/" + htosu + "/" + mtosu + "/working/" + working;
 
 
@@ -2648,11 +2633,7 @@ public class ReportController {
 
     private String getTeltonikaMonthlyHoursVrv(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, int hfromsa, int mfromsa,
             int htosa, int mtosa, int hfromsu, int mfromsu, int htosu, int mtosu, int working) {
-        String uri =
-                "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/" + hfromsa + "/" + mfromsa + "/" + htosa + "/" + mtosa + "/" + hfromsu + "/" + mfromsu + "/" + htosu + "/" + mtosu + "/working/"
-                        + working;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/" + hfromsa + "/" + mfromsa + "/" + htosa + "/" + mtosa + "/" + hfromsu + "/" + mfromsu + "/" + htosu + "/" + mtosu + "/working/"
                 + working;
 
@@ -2687,8 +2668,7 @@ public class ReportController {
      * mesecni teltonika izvestaj
      */
     private String getGs100Monthly(String imei, String dateFromS, String dateToS) {
-        String uri = "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/monthly";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/monthly";
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/monthly";
 
 
         String result = restTemplate.getForObject(uri, String.class);
@@ -2700,8 +2680,7 @@ public class ReportController {
      */
 
     private String getTeltonikaMonthly(String imei, String from, String to) {
-        String uri = "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + from + "/to/" + to + "/monthly";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + from + "/to/" + to + "/monthly";
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + from + "/to/" + to + "/monthly";
 
 
         String result = restTemplate.getForObject(uri, String.class);
@@ -2740,9 +2719,7 @@ public class ReportController {
     //////////////////////////////////////////////////////////////////
 
     private String getGs100(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
-        String uri =
-                "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto;
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto;
 
 
         String result = restTemplate.getForObject(uri, String.class);
@@ -2750,9 +2727,7 @@ public class ReportController {
     }
 
     private String getTeltonika(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
-        String uri = "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
-                + mto;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto;
 
 
@@ -2799,10 +2774,7 @@ public class ReportController {
      * Vraca izvestaj o max brzini sa spoljnog api-a specifican za Teltonika uredjaje
      */
     private String getTeltonikaSpeed(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, int max) {
-        String uri =
-                "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/speed/max/" + max;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/speed/max/" + max;
 
 
@@ -2823,10 +2795,7 @@ public class ReportController {
      * Vraca izvestaj o max brzini sa spoljnog api-a specifican za Gs100 uredjaje
      */
     private String getGs100Speed(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, int max) {
-        String uri =
-                "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/speed/max/" + max;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/speed/max/" + max;
 
 
@@ -2851,10 +2820,7 @@ public class ReportController {
      * Vraca izvestaj o rutama sa spoljnog api-a specifican za teltonika uredjaje
      */
     private String getTeltonikaRoute(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, Double minDistance) {
-        String uri =
-                "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/routes?minDistance=" + minDistance;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/routes?minDistance=" + minDistance;
 
 
@@ -2881,10 +2847,7 @@ public class ReportController {
      * Vraca izvestaj o rutama sa spoljnog api-a specifican za gs100 uredjaje
      */
     private String getGs100Route(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, Double minDistance) {
-        String uri =
-                "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/routes?minDistance=" + minDistance;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/routes?minDistance=" + minDistance;
 
 
@@ -2917,10 +2880,7 @@ public class ReportController {
      */
     private String getTeltonikaIdle(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, int min, boolean isIdle,
             int minIdle) {
-        String uri =
-                "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                       + "/min/" + min + "/minIdle" + "/" + minIdle + "/idle?isIdle=" + isIdle;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/min/" + min + "/minIdle" + "/" + minIdle + "/idle?isIdle=" + isIdle;
 
 
@@ -2950,10 +2910,7 @@ public class ReportController {
      * vraca informaciju o stajanjima vozila sa gs100 uredjajem u vremenskom intervalu
      */
     private String getGs100OIdle(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, int min, boolean isIdle, int minIdle) {
-        String uri =
-                "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/min/" + min + "/minIdle" + "/" + minIdle + "/idle?isIdle=" + isIdle;
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/min/" + min + "/minIdle" + "/" + minIdle + "/idle?isIdle=" + isIdle;
 
 
@@ -2984,10 +2941,7 @@ public class ReportController {
      */
 
     private String getTeltonikaGreen(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
-        String uri =
-                "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/green";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/green";
 
 
@@ -3003,10 +2957,7 @@ public class ReportController {
      * vraca izvestaj o zelenoj voznji specifican za gs100 uredjaje
      */
     private String getGs100OGreen(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
-        String uri =
-                "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/green";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/green";
 
         try {
@@ -3021,10 +2972,7 @@ public class ReportController {
      * vraca izvestaj o temperaturanma sa spoljnog api-a specifican za teltonika uredjaje
      */
     private String getTeltonikaTemp(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
-        String uri =
-                "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/temp";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/temp";
 
         try {
@@ -3039,10 +2987,7 @@ public class ReportController {
      * vraca izvestaj o temperaturama sa spoljno api-a specifican za gs100 uredjaje
      */
     private String getGs100Temp(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
-        String uri =
-                "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/temp";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/temp";
 
         try {
@@ -3057,10 +3002,7 @@ public class ReportController {
      * vraca informacije o dogadjajima vozila u vremenskom intervalu teltonika uredjaja
      */
     private String getTeltonikaEvent(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, Event event) {
-        String uri =
-                "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/event";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/event";
         //        System.out.println("Sdasdasd");
         //
@@ -3084,10 +3026,7 @@ public class ReportController {
      * vraca informacije o dogadjajima vozila u vremenskom intervalu za gs100 uredjaje
      */
     private String getGs100Event(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, Event event) {
-        String uri =
-                "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
-                        + "/event";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/event";
 
 
@@ -3104,8 +3043,7 @@ public class ReportController {
      * NE KORISTI SE
      */
     private String getTeltonikaFuelSond(String imei, String dateFromS, String dateToS) {
-        String uri = "http://localhost:8080/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/fuel";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/fuel";
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/fuel";
 
 
         try {
@@ -3121,8 +3059,7 @@ public class ReportController {
      * NE KORISTI SE
      */
     private String getGs100FuelSond(String imei, String dateFromS, String dateToS) {
-        String uri = "http://localhost:8080/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/fuel";
-        uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/fuel";
+        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/fuel";
 
         try {
             String result = restTemplate.getForObject(uri, String.class);
