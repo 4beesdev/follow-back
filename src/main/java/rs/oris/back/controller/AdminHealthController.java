@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * deadline so the endpoint responds quickly even when services are down.</p>
  *
  * <p>Services checked: PostgreSQL, follow-gps-data, MongoDB (via gps-data),
- * the API itself (self-check with memory stats), and two GPS receiver TCP ports.</p>
+ * the API itself (self-check with memory stats), and three GPS receiver TCP ports.</p>
  */
 @RestController
 @RequestMapping("/api/admin")
@@ -58,7 +58,7 @@ public class AdminHealthController {
 
     /**
      * Dedicated thread pool for running health checks in parallel.
-     * Fixed size of 6 threads (one per service check).
+     * Fixed size of 7 threads (one per service check).
      */
     private ExecutorService healthExecutor;
 
@@ -83,7 +83,7 @@ public class AdminHealthController {
         factory.setConnectTimeout(3000);   // 3s connect timeout
         factory.setReadTimeout(5000);      // 5s read timeout (was 30s!)
         this.healthRestTemplate = new RestTemplate(factory);
-        this.healthExecutor = Executors.newFixedThreadPool(6); // one thread per health check
+        this.healthExecutor = Executors.newFixedThreadPool(7); // one thread per health check
     }
 
     /**
@@ -108,6 +108,7 @@ public class AdminHealthController {
                 gpsDataBaseUrl + "/api/admin/gps/health")));
         futures.add(healthExecutor.submit(() -> checkTcpPort("gps-gs100", "gps-gs100", 9876)));
         futures.add(healthExecutor.submit(() -> checkTcpPort("gps-teltonika", "gps-teltonika", 9877)));
+        futures.add(healthExecutor.submit(() -> checkTcpPort("gps-teltonika-old", "gps-teltonika-old", 9878)));
 
         // Collect results with a 6 second overall timeout
         List<Map<String, Object>> services = new ArrayList<>();
