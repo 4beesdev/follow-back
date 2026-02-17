@@ -68,7 +68,9 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.GET, "/api/perkela","/api/notifications/all").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/single-notification","/api/notification-modal/update").permitAll()
                 .antMatchers(HttpMethod.PATCH,"/api/vehicle/*/update-mileage").permitAll()
+                .antMatchers(HttpMethod.GET, "/api/admin/health").permitAll()  // Docker healthcheck (no JWT)
                 // --- All remaining endpoints require authentication ---
+                .anyRequest().authenticated()
                 .and()
                 .addFilter(new JWTAuthenticationFilter(authenticationManager()))   // handles login
                 .addFilter(new JWTAuthorizationFilter(authenticationManager()))    // validates tokens

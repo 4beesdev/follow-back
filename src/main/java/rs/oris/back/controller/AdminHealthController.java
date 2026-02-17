@@ -58,7 +58,7 @@ public class AdminHealthController {
 
     /**
      * Dedicated thread pool for running health checks in parallel.
-     * Fixed size of 6 threads (one per service check).
+     * Fixed size of 7 threads (one per service check).
      */
     private ExecutorService healthExecutor;
 
@@ -68,7 +68,7 @@ public class AdminHealthController {
      *   <li>A pooled HTTP client (max 10 connections, 5 per route) with aggressive
      *       timeouts (3 s connect, 5 s read) so a single slow service cannot
      *       stall the entire health check.</li>
-     *   <li>A fixed thread pool of 6 threads — one per service check — so all
+     *   <li>A fixed thread pool of 7 threads — one per service check — so all
      *       probes run concurrently and the endpoint returns in ~max(single check)
      *       rather than sum(all checks).</li>
      * </ul>
@@ -83,7 +83,23 @@ public class AdminHealthController {
         factory.setConnectTimeout(3000);   // 3s connect timeout
         factory.setReadTimeout(5000);      // 5s read timeout (was 30s!)
         this.healthRestTemplate = new RestTemplate(factory);
-        this.healthExecutor = Executors.newFixedThreadPool(6); // one thread per health check
+        this.healthExecutor = Executors.newFixedThreadPool(7); // one thread per health check
+    }
+
+    /**
+     * Lightweight token-validation endpoint used by the Nginx {@code auth_request}
+     * directive to gate access to internal proxy routes (e.g. GPS status endpoints).
+     *
+     * <p>Since this controller is mapped under {@code /api/admin} (a JWT-protected
+     * path), Spring Security's {@link JWTAuthorizationFilter} will have already
+     * validated the token <em>before</em> this method is reached. The method itself
+     * does zero work — it simply returns HTTP 200 to signal "authenticated".</p>
+     *
+     * <p>Nginx interprets 2xx as "allow", 401/403 as "deny".</p>
+     */
+    @GetMapping("/auth-check")
+    public ResponseEntity<Void> authCheck() {
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -108,6 +124,7 @@ public class AdminHealthController {
                 gpsDataBaseUrl + "/api/admin/gps/health")));
         futures.add(healthExecutor.submit(() -> checkTcpPort("gps-gs100", "gps-gs100", 9876)));
         futures.add(healthExecutor.submit(() -> checkTcpPort("gps-teltonika", "gps-teltonika", 9877)));
+        futures.add(healthExecutor.submit(() -> checkTcpPort("gps-teltonika-old", "gps-teltonika-old", 9878)));
 
         // Collect results with a 6 second overall timeout
         List<Map<String, Object>> services = new ArrayList<>();
