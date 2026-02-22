@@ -16,6 +16,7 @@ import rs.oris.back.repository.*;
 
 import java.awt.*;
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.*;
@@ -111,7 +112,7 @@ public class NotificationVehicleService {
             notificationVehicle.setSms(notifBody.isSms());
             notificationVehicle.setPush(notifBody.isPush());
             notificationVehicle.setFirmId(firmId);
-            notificationVehicle.setStartTimestamp(LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli());
+            notificationVehicle.setStartTimestamp(Instant.now().toEpochMilli());
             notificationVehicle.setVehicleRegistration(notifBody.getVehicleRegistration());
             notificationVehicle.setNotifyDaysBeforeVehicleRegistration(notifBody.getNotifyDaysBeforeVehicleRegistration());
             notificationVehicle.setEmptyingFuelMargine(notifBody.getEmptyingFuelMargine());
@@ -178,7 +179,7 @@ public class NotificationVehicleService {
             notificationVehicle.setSms(notifBody.isSms());
             notificationVehicle.setPush(notifBody.isPush());
             notificationVehicle.setFirmId(firmId);
-            notificationVehicle.setStartTimestamp(LocalDateTime.now().toInstant(ZoneOffset.UTC).toEpochMilli());
+            notificationVehicle.setStartTimestamp(Instant.now().toEpochMilli());
             notificationVehicle.setVehicleRegistration(notifBody.getVehicleRegistration());
             notificationVehicle.setNotifyDaysBeforeVehicleRegistration(notifBody.getNotifyDaysBeforeVehicleRegistration());
             notificationVehicle.setEmptyingFuelMargine(notifBody.getEmptyingFuelMargine());

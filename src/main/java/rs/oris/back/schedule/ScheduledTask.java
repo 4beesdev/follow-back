@@ -4,6 +4,7 @@ import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -476,7 +477,7 @@ public class ScheduledTask {
                 //                   reportController.izvestajORutamaExport(userReport.getRouteImei(), fromString, toString, userReport.getHfrom(), userReport.getMfrom(), 22,59, userReport.getXlsxpdf());
                 for (Integer integer : listGeozonesId) {
                     file = reportController.getGeozoneReportExprot(1, listGeozonesId, userReport.getRouteImei(),
-                            from.atStartOfDay().toEpochSecond(ZoneOffset.UTC), to.atStartOfDay().toEpochSecond(ZoneOffset.UTC));
+                            from.atStartOfDay(ZoneId.of("Europe/Belgrade")).toEpochSecond(), to.atStartOfDay(ZoneId.of("Europe/Belgrade")).toEpochSecond());
                     sendMail(userReport, file, true);
 
                 }
@@ -517,7 +518,7 @@ public class ScheduledTask {
                 String toString = formatter.format(to);
                 String fromString = formatter.format(from);
                 file = reportController.izvestajOZelenojVoznjiExport(0, userReport.getRouteImei(),
-                        String.valueOf(from.atStartOfDay().toEpochSecond(ZoneOffset.UTC)), String.valueOf(to.atStartOfDay().toEpochSecond(ZoneOffset.UTC)),
+                        String.valueOf(from.atStartOfDay(ZoneId.of("Europe/Belgrade")).toEpochSecond()), String.valueOf(to.atStartOfDay(ZoneId.of("Europe/Belgrade")).toEpochSecond()),
                         userReport.getHfrom(), userReport.getMfrom(), 22, 59);
 
                 sendMail(userReport, file, true);
