@@ -18,5 +18,7 @@ public interface PNRepository extends JpaRepository<PN, Integer> {
 
     List<PN> findByDriverDriverIdAndDateBetween(int driverId, Date dateFrom, Date dateTo);
 
+    long countByVehicleFirmFirmIdAndTrailer(int firmid, boolean trailer);
+
     void deleteByVehicleVehicleId(int vehicleId);
 }

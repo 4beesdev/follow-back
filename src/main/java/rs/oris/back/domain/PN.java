@@ -1,5 +1,7 @@
 package rs.oris.back.domain;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import javax.persistence.*;
 import java.util.Date;
 
@@ -44,6 +46,9 @@ public class PN {
     private String trailerRegistrationField;
     @Column(name = "garage_address")
     private String garageAddress;
+
+    @Column(name = "no_seq")
+    private Integer noSeq;
 
     public PN() {
     }
@@ -221,5 +226,21 @@ public class PN {
 
     public void setTrailerRegistrationField(String trailerRegistrationField) {
         this.trailerRegistrationField = trailerRegistrationField;
+    }
+
+    public Integer getNoSeq() {
+        return noSeq;
+    }
+
+    public void setNoSeq(Integer noSeq) {
+        this.noSeq = noSeq;
+    }
+
+    @JsonProperty("No")
+    public String getNo() {
+        if (noSeq == null) {
+            return null;
+        }
+        return String.format("%07d", noSeq);
     }
 }

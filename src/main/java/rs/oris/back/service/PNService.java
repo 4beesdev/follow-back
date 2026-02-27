@@ -1,12 +1,16 @@
 package rs.oris.back.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.Driver;
+import rs.oris.back.domain.FirmPnCounter;
 import rs.oris.back.domain.PN;
 import rs.oris.back.domain.Vehicle;
 import rs.oris.back.repository.DriverRepository;
+import rs.oris.back.repository.FirmPnCounterRepository;
 import rs.oris.back.repository.PNRepository;
 import rs.oris.back.repository.VehicleRepository;
 
@@ -22,6 +26,8 @@ public class PNService {
     private DriverRepository driverRepository;
     @Autowired
     private VehicleRepository vehicleRepository;
+    @Autowired
+    private FirmPnCounterRepository firmPnCounterRepository;
 
     /**
      *
@@ -49,6 +55,7 @@ public class PNService {
     /**
      * create/save
      */
+    @Transactional
 	public Response<PN> createPN(PN pN, int vehicleId, int driverId) throws Exception {
         Optional<Vehicle> optionalVehicle = vehicleRepository.findById(vehicleId);
         if (!optionalVehicle.isPresent()) {
@@ -63,6 +70,21 @@ public class PNService {
         pN.setVehicle(optionalVehicle.get());
         pN.setDriver(optionalDriver.get());
 
+        int firmId = optionalVehicle.get().getFirm().getFirmId();
+        boolean isCargo = pN.isTrailer();
+
+        FirmPnCounter counter = getOrCreateLockedCounter(firmId);
+        int nextNo;
+        if (isCargo) {
+            nextNo = counter.getLastCargoNo() + 1;
+            counter.setLastCargoNo(nextNo);
+        } else {
+            nextNo = counter.getLastPassengerNo() + 1;
+            counter.setLastPassengerNo(nextNo);
+        }
+        firmPnCounterRepository.save(counter);
+
+        pN.setNoSeq(nextNo);
 
 		PN obj = pNRepository.save(pN);
 		if (obj == null) {
@@ -70,6 +92,23 @@ public class PNService {
 		}
 		return new Response<>(obj);
 	}
+
+    private FirmPnCounter getOrCreateLockedCounter(int firmId) {
+        Optional<FirmPnCounter> locked = firmPnCounterRepository.findForUpdate(firmId);
+        if (locked.isPresent()) {
+            return locked.get();
+        }
+
+        int existingPassenger = (int) pNRepository.countByVehicleFirmFirmIdAndTrailer(firmId, false);
+        int existingCargo = (int) pNRepository.countByVehicleFirmFirmIdAndTrailer(firmId, true);
+        FirmPnCounter created = new FirmPnCounter(firmId, existingPassenger, existingCargo);
+        try {
+            firmPnCounterRepository.saveAndFlush(created);
+        } catch (DataIntegrityViolationException e) {
+            // concurrent insert, ignore and re-lock
+        }
+        return firmPnCounterRepository.findForUpdate(firmId).orElseThrow(() -> new IllegalStateException("Failed to lock FirmPnCounter"));
+    }
     /**
      *
      * vraca jedan putni nalog preko id-a
