@@ -12,13 +12,17 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 import rs.oris.back.config.MongoServerConfig;
 import rs.oris.back.controller.wrapper.ForbiddenException;
 import rs.oris.back.controller.wrapper.Response;
@@ -2080,9 +2084,13 @@ public class ReportController {
      * @throws Exception ako geozona ne postoji
      */
     @GetMapping("api/firm/{firm_id}/report/imei/{imei}/geozone/{geozone_id}/from/{from}/to/{to}")
-    private Response<List<VGR>> getGeozoneReport(@PathVariable("geozone_id") int geozoneId, @PathVariable("imei") String imei,
+    private Response<List<VGR>> getGeozoneReport(@PathVariable("firm_id") int firmId, @PathVariable("geozone_id") int geozoneId,
+            @PathVariable("imei") String imei,
             @PathVariable("from") long dateFromS, @PathVariable("to") long dateToS) throws Exception {
+        return getGeozoneReportInternal(firmId, geozoneId, imei, dateFromS, dateToS);
+    }
 
+    private Response<List<VGR>> getGeozoneReportInternal(Integer firmId, int geozoneId, String imei, long dateFromS, long dateToS) throws Exception {
         List<VGR> vgrList = new ArrayList<>();
         Optional<Geozone> optionalGeozone = geozoneRepository.findById(geozoneId);
         if (!optionalGeozone.isPresent()) {
@@ -2096,8 +2104,17 @@ public class ReportController {
             throw new Exception("IMEI does not exist");
         }
 
+        Integer resolvedFirmId = firmId;
+        try {
+            if (resolvedFirmId == null && vehicle.getFirm() != null) {
+                resolvedFirmId = vehicle.getFirm().getFirmId();
+            }
+        } catch (Exception ignore) {
+        }
+
+        Integer deviceType = vehicle.getDeviceType();
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/1/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
-        if (vehicle.getDeviceType() == 0) {
+        if (deviceType != null && deviceType == 0) {
             uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
         }
 //        String uri = "http://localhost:8080/api/history/1/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
@@ -2105,25 +2122,101 @@ public class ReportController {
 //            uri = "http://localhost:8080/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
 //        }
 
+        log.info("GeozoneReport firmId={} imei={} geozoneId={} from={} to={} deviceType={} historyUri={}",
+                resolvedFirmId, imei, geozoneId, dateFromS, dateToS, deviceType, uri);
 
-        String result = restTemplate.getForObject(uri, String.class);
-        List<Gs100> gs100List = new ArrayList<>();
-        ObjectMapper mapper = new ObjectMapper();
-
-        if (result.length() > 22) {
-            result = result.substring(8, result.length() - 1);
-            gs100List = mapper.readValue(result, new TypeReference<List<Gs100>>() {
-            });
+        RestTemplate restTemplate = new RestTemplate();
+        String body;
+        try {
+            ResponseEntity<String> historyResponse = restTemplate.exchange(uri, HttpMethod.GET, null, String.class);
+            body = historyResponse.getBody();
+            if (log.isDebugEnabled()) {
+                log.debug("GeozoneReport historyResponse status={} bodyLength={}",
+                        historyResponse.getStatusCodeValue(), body == null ? 0 : body.length());
+            }
+        } catch (HttpStatusCodeException e) {
+            String errorBody = e.getResponseBodyAsString();
+            String sample = errorBody == null ? "" : errorBody.substring(0, Math.min(errorBody.length(), 500));
+            log.warn("GeozoneReport historyError status={} imei={} geozoneId={} from={} to={} bodySample={}",
+                    e.getStatusCode().value(), imei, geozoneId, dateFromS, dateToS, sample);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "History service error");
+        } catch (RestClientException e) {
+            log.warn("GeozoneReport historyCallFailed imei={} geozoneId={} from={} to={} message={}",
+                    imei, geozoneId, dateFromS, dateToS, e.getMessage(), e);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "History service unavailable");
         }
+
+        if (body == null || body.isBlank()) {
+            return new Response<>(new ArrayList<>());
+        }
+
+        List<Gs100> rawPoints;
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode root = mapper.readTree(body);
+            JsonNode dataNode;
+            if (root != null && root.isArray()) {
+                dataNode = root;
+            } else if (root != null && root.has("data") && root.get("data").isArray()) {
+                dataNode = root.get("data");
+            } else {
+                String sample = body.substring(0, Math.min(body.length(), 500));
+                log.warn("GeozoneReport invalidHistoryFormat imei={} geozoneId={} from={} to={} bodySample={}",
+                        imei, geozoneId, dateFromS, dateToS, sample);
+                throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Invalid history response format");
+            }
+
+            rawPoints = mapper.convertValue(dataNode, new TypeReference<List<Gs100>>() {
+            });
+        } catch (ResponseStatusException e) {
+            throw e;
+        } catch (Exception e) {
+            String sample = body.substring(0, Math.min(body.length(), 500));
+            log.warn("GeozoneReport historyParseFailed imei={} geozoneId={} from={} to={} bodySample={}",
+                    imei, geozoneId, dateFromS, dateToS, sample, e);
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Invalid history response");
+        }
+
+        List<Gs100> gs100List = new ArrayList<>();
+        for (Gs100 point : rawPoints) {
+            if (point == null || point.getGps() == null || point.getGps().getTimestamp() == null) {
+                continue;
+            }
+            if (point.getIo() == null) {
+                point.setIo(new HashMap<>());
+            }
+            if (point.getRfid() == null) {
+                point.setRfid("");
+            }
+            gs100List.add(point);
+        }
+
         Map<String, Driver> drivers = new HashMap<>();
         Collections.reverse(gs100List);
 
+        boolean crico = "circ".equalsIgnoreCase(geozone.getType());
+
         Polygon polygon = new Polygon();
-        if (!geozone.getType().equals("circ")) {// ako nije krug
+        if (!crico) {// ako nije krug
             String geozoneString = geozone.getJson();
+            if (geozoneString == null) {
+                log.warn("GeozoneReport geozoneJsonMissing geozoneId={}", geozoneId);
+                return new Response<>(new ArrayList<>());
+            }
             int x = geozoneString.indexOf("\"bounds\"");
+            if (x < 0) {
+                log.warn("GeozoneReport geozoneBoundsMissing geozoneId={}", geozoneId);
+                return new Response<>(new ArrayList<>());
+            }
+
             int y = geozoneString.length() - 1;
-            String s2 = geozoneString.substring(x + 9, y);
+            String s2;
+            try {
+                s2 = geozoneString.substring(x + 9, y);
+            } catch (Exception e) {
+                log.warn("GeozoneReport geozoneBoundsSubstringFailed geozoneId={}", geozoneId, e);
+                return new Response<>(new ArrayList<>());
+            }
 
             ObjectMapper mapper2 = new ObjectMapper();
             try {
@@ -2133,7 +2226,7 @@ public class ReportController {
                     polygon.addPoint((int) (latLng.getLat() * 100000), (int) (latLng.getLng() * 100000));
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                log.warn("GeozoneReport geozoneBoundsParseFailed geozoneId={}", geozoneId, e);
                 return new Response<>(new ArrayList<>());
             }
         }
@@ -2143,11 +2236,10 @@ public class ReportController {
         VGR vgr = new VGR();
         vgr.setGeozone(geozone);
         vgr.setVehicle(vehicle);
+        double fuelMargine = vehicle.getFuelMargine() == null ? 0.0 : vehicle.getFuelMargine().doubleValue();
         long stajanje = 0;
         double millage = 0;
         long mirovanje = 0;
-
-        boolean crico = geozone.getType().equalsIgnoreCase("circ");
 
         if (gs100List.size() == 0) {
             return new Response<>(new ArrayList<>());
@@ -2165,7 +2257,7 @@ public class ReportController {
                 Double fuel = gs100List.get(0).getIo().getOrDefault("LVCAN Fuel Level (liters)", 0.0);
                 Double fuelPercentage = gs100List.get(0).getIo().getOrDefault("LVCAN Fuel Level (percentage)", 0.0);
                 if (fuel == 0.0 && fuelPercentage != 0.0) {
-                    fuel = (fuelPercentage * vehicle.getFuelMargine()) / 100;
+                    fuel = (fuelPercentage * fuelMargine) / 100;
                 } else if (fuel == 0.0 && fuelPercentage == 0.0)
                     fuel = gs100List.get(0).getIo().getOrDefault("Techton liters", 0.0);
                 System.out.println("Namestam gorivo start na 1-" + fuel);
@@ -2180,7 +2272,7 @@ public class ReportController {
                 Double fuel = gs100List.get(0).getIo().getOrDefault("LVCAN Fuel Level (liters)", 0.0);
                 Double fuelPercentage = gs100List.get(0).getIo().getOrDefault("LVCAN Fuel Level (percentage)", 0.0);
                 if (fuel == 0.0 && fuelPercentage != 0.0) {
-                    fuel = (fuelPercentage * vehicle.getFuelMargine()) / 100;
+                    fuel = (fuelPercentage * fuelMargine) / 100;
                 } else if (fuel == 0.0 && fuelPercentage == 0.0)
                     fuel = gs100List.get(0).getIo().getOrDefault("Techton liters", 0.0);
                 System.out.println("Namestam gorivo start na 2-" + fuel);
@@ -2215,7 +2307,7 @@ public class ReportController {
                         Double fuel = gs100List.get(i).getIo().getOrDefault("LVCAN Fuel Level (liters)", 0.0);
                         Double fuelPercentage = gs100List.get(i).getIo().getOrDefault("LVCAN Fuel Level (percentage)", 0.0);
                         if (fuel == 0.0 && fuelPercentage != 0.0) {
-                            fuel = (fuelPercentage * vehicle.getFuelMargine()) / 100;
+                            fuel = (fuelPercentage * fuelMargine) / 100;
                         } else if (fuel == 0.0 && fuelPercentage == 0.0)
                             fuel = gs100List.get(i).getIo().getOrDefault("Techton liters", 0.0);
                         System.out.println("Namestam gorivo start na 3-" + fuel);
@@ -2249,7 +2341,7 @@ public class ReportController {
                             Double fuelPercentage = gs100List.get(i).getIo().getOrDefault("LVCAN Fuel Level (percentage)", 0.0);
 
                             if (fuel == 0.0 && fuelPercentage != 0.0) {
-                                fuel = fuelPercentage * vehicle.getFuelMargine() / 100;
+                                fuel = fuelPercentage * fuelMargine / 100;
                             } else if (fuel == 0.0 && fuelPercentage == 0.0)
                                 fuel = gs100List.get(i).getIo().getOrDefault("Techton liters", 0.0);
                             vgr.setFuelEnd(fuel);
@@ -2277,7 +2369,7 @@ public class ReportController {
                                 Double fuelPercentage = gs100List.get(i).getIo().getOrDefault("LVCAN Fuel Level (percentage)", 0.0);
 
                                 if (fuel == 0.0 && fuelPercentage != 0.0) {
-                                    fuel = fuelPercentage * vehicle.getFuelMargine() / 100;
+                                    fuel = fuelPercentage * fuelMargine / 100;
                                 } else if (fuel == 0.0 && fuelPercentage == 0.0)
                                     fuel = gs100List.get(i).getIo().getOrDefault("Techton liters", 0.0);
                                 vgr.setFuelEnd(fuel);
@@ -2298,7 +2390,7 @@ public class ReportController {
                             Double fuelPercentage = gs100List.get(i).getIo().getOrDefault("LVCAN Fuel Level (percentage)", 0.0);
 
                             if (fuel == 0.0 && fuelPercentage != 0.0) {
-                                fuel = fuelPercentage * vehicle.getFuelMargine() / 100;
+                                fuel = fuelPercentage * fuelMargine / 100;
                             } else if (fuel == 0.0 && fuelPercentage == 0.0)
                                 fuel = gs100List.get(i).getIo().getOrDefault("Techton liters", 0.0);
                             //                            System.out.println("Namestam gorivo start na  4 -"+ fuel);
@@ -2332,7 +2424,7 @@ public class ReportController {
                         Double fuelPercentage = gs100List.get(i).getIo().getOrDefault("LVCAN Fuel Level (percentage)", 0.0);
 
                         if (fuel == 0.0 && fuelPercentage != 0.0) {
-                            fuel = fuelPercentage * vehicle.getFuelMargine() / 100;
+                            fuel = fuelPercentage * fuelMargine / 100;
                         } else if (fuel == 0.0 && fuelPercentage == 0.0)
                             fuel = gs100List.get(i).getIo().getOrDefault("Techton liters", 0.0);
                         vgr.setFuelEnd(fuel);
@@ -2360,7 +2452,7 @@ public class ReportController {
                             Double fuelPercentage = gs100List.get(i).getIo().getOrDefault("LVCAN Fuel Level (percentage)", 0.0);
 
                             if (fuel == 0.0 && fuelPercentage != 0.0) {
-                                fuel = fuelPercentage * vehicle.getFuelMargine() / 100;
+                                fuel = fuelPercentage * fuelMargine / 100;
                             } else if (fuel == 0.0 && fuelPercentage == 0.0)
                                 fuel = gs100List.get(i).getIo().getOrDefault("Techton liters", 0.0);
 
@@ -2380,7 +2472,7 @@ public class ReportController {
                         Double fuel = gs100List.get(i).getIo().getOrDefault("LVCAN Fuel Level (liters)", 0.0);
                         Double fuelPercentage = gs100List.get(i).getIo().getOrDefault("LVCAN Fuel Level (percentage)", 0.0);
                         if (fuel == 0.0 && fuelPercentage != 0.0) {
-                            fuel = (fuelPercentage * vehicle.getFuelMargine()) / 100;
+                            fuel = (fuelPercentage * fuelMargine) / 100;
                         } else if (fuel == 0.0 && fuelPercentage == 0.0)
                             fuel = gs100List.get(i).getIo().getOrDefault("Techton liters", 0.0);
                         //                        System.out.println("Namestam gorivo start na 5- "+ fuel +" lsita size "+ vgrList.size()+ gs100List.get(i).getGps() + gs100List.get(i).getIo());
@@ -2416,11 +2508,28 @@ public class ReportController {
      * @throws Exception ako geozona ne postoji
      */
     @PostMapping("api/firm/{firm_id}/report/geozone/imei/{imei}/from/{from}/to/{to}/export/{eid}")//done
-    public byte[] getGeozoneReportExprot(@PathVariable("eid") int eid, @RequestBody List<Integer> ids, @PathVariable("imei") String imei,
+    public byte[] getGeozoneReportExprotHttp(@PathVariable("firm_id") int firmId, @PathVariable("eid") int eid, @RequestBody List<Integer> ids,
+            @PathVariable("imei") String imei,
             @PathVariable("from") long dateFromS, @PathVariable("to") long dateToS) throws Exception {
+        return getGeozoneReportExprot(firmId, eid, ids, imei, dateFromS, dateToS);
+    }
+
+    public byte[] getGeozoneReportExprot(int eid, List<Integer> ids, String imei, long dateFromS, long dateToS) throws Exception {
+        Integer derivedFirmId = null;
+        try {
+            Vehicle vehicle = vehicleService.findByImei(imei);
+            if (vehicle != null && vehicle.getFirm() != null) {
+                derivedFirmId = vehicle.getFirm().getFirmId();
+            }
+        } catch (Exception ignore) {
+        }
+        return getGeozoneReportExprot(derivedFirmId, eid, ids, imei, dateFromS, dateToS);
+    }
+
+    private byte[] getGeozoneReportExprot(Integer firmId, int eid, List<Integer> ids, String imei, long dateFromS, long dateToS) throws Exception {
         List<VGR> vgrList = new ArrayList<>();
         for (Integer integer : ids) {
-            vgrList.addAll(getGeozoneReport(integer, imei, dateFromS, dateToS).getData());
+            vgrList.addAll(getGeozoneReportInternal(firmId, integer, imei, dateFromS, dateToS).getData());
         }
         System.out.println(vgrList.size());
         return reportService.geozoneExcport(vgrList, eid, dateFromS, dateToS);
