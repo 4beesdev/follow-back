@@ -249,7 +249,11 @@ public class ReportService {
         //Poziva se metoda na drugom mikroserivsu koja obradjuje dalje
         log.info("####################################");
         log.info(LocalDateTime.now() + " - Sending request for sensor activation report for imeis: " + imeis);
-        return galebRestComunication.getSensorActivationReports(from, to, mappedList).getBody();
+        ZoneId serbiaZone = ZoneId.of("Europe/Belgrade");
+        Long fromEpochMs = from.atZone(serbiaZone).toInstant().toEpochMilli();
+        Long toEpochMs = to.atZone(serbiaZone).toInstant().toEpochMilli();
+
+        return galebRestComunication.getSensorActivationReports(fromEpochMs, toEpochMs, mappedList).getBody();
     }
 
     //Metoda koja varca EffectiveWorkingHoursReport objekat koji sadrzi informacije o kretanju vozila

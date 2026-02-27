@@ -87,11 +87,11 @@ public class GalebRestComunication {
         );
     }
 
-    public ResponseEntity<List<SensorActivationReport>> getSensorActivationReports(LocalDateTime from, LocalDateTime to, List<SensorActivtionVehicleDTO> mappedList) {
+    public ResponseEntity<List<SensorActivationReport>> getSensorActivationReports(Long fromEpochMs, Long toEpochMs, List<SensorActivtionVehicleDTO> mappedList) {
         UriComponentsBuilder builder = UriComponentsBuilder
                 .fromUriString(getBaseUrl() + SENSOR_ACTIVATION_REPORT_ENDPOINT)
-                .queryParam("from", from)
-                .queryParam("to", to);
+                .queryParam("fromEpochMs", fromEpochMs)
+                .queryParam("toEpochMs", toEpochMs);
 
         String url = builder.toUriString();
 

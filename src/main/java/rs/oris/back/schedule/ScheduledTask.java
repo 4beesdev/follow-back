@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Base64;
@@ -644,8 +645,10 @@ public class ScheduledTask {
             try {
                 // LocalDateTime to = LocalDateTime.now().minusDays(1);
                 // LocalDateTime from = to.minusDays(userReport.getPeriod() - 1);
-                LocalDateTime to = LocalDateTime.now().minusDays(1).toLocalDate().atTime(23, 59, 59);
-                LocalDateTime from = to.minusDays(userReport.getPeriod() - 1).toLocalDate().atStartOfDay();
+                ZoneId serbiaZone = ZoneId.of("Europe/Belgrade");
+                LocalDate serbiaDay = ZonedDateTime.now(serbiaZone).minusDays(1).toLocalDate();
+                LocalDateTime from = serbiaDay.minusDays(userReport.getPeriod() - 1).atStartOfDay();
+                LocalDateTime to = serbiaDay.atTime(23, 59, 59);
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 List<String> imeis = Arrays.asList(userReport.getImei());
                 log.info("####################################");
