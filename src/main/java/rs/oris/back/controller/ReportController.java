@@ -2146,7 +2146,7 @@ public class ReportController {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "History service unavailable");
         }
 
-        if (body == null || body.isBlank()) {
+        if (body == null || body.trim().isEmpty()) {
             return new Response<>(new ArrayList<>());
         }
 
