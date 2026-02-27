@@ -36,6 +36,7 @@ import rs.oris.back.domain.reports.sensor_activation.SensorActivationReport;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -266,10 +267,16 @@ public class GalebRestComunication {
     }
 
     public ResponseEntity<List<DailyMovementConsumptionReport>> getDailyMovementConsumptionReport(List<DailyMovementConsumptionReportAddutionalDataDTO> mappedList, LocalDateTime from, LocalDateTime to, Integer emptyingMargin, Integer fuelMargin) {
+        ZoneId belgradeZone = ZoneId.of("Europe/Belgrade");
+        Long fromEpochMs = from != null ? from.atZone(belgradeZone).toInstant().toEpochMilli() : null;
+        Long toEpochMs = to != null ? to.atZone(belgradeZone).toInstant().toEpochMilli() : null;
+
         UriComponentsBuilder builder = UriComponentsBuilder
                 .fromUriString(getBaseUrl() + DAILY_MOVEMENT_CONSUMPTION_REPORT_ENDPOINT)
                 .queryParam("from", from)
                 .queryParam("to", to)
+                .queryParam("fromEpochMs", fromEpochMs)
+                .queryParam("toEpochMs", toEpochMs)
                 .queryParam("emptyingMargin",emptyingMargin)
                 .queryParam("fuelMargin",fuelMargin);
 
