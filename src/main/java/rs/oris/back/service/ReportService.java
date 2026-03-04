@@ -230,7 +230,27 @@ public class ReportService {
                 .collect(Collectors.toList());
 
         //Poziva se metoda na drugom mikroserivsu koja obradjuje dalje
-        return galebRestComunication.getMonthlyFuelConsumptionReports(from, to, mappedList, fuelMargin, emptyingMargin).getBody();
+        List<MonthlyFuelConsumptionReport> reportRows = galebRestComunication.getMonthlyFuelConsumptionReports(from, to, mappedList, fuelMargin, emptyingMargin).getBody();
+        if (reportRows == null) {
+            return Collections.emptyList();
+        }
+
+        for (MonthlyFuelConsumptionReport row : reportRows) {
+            Long drivingTime = row.getDrivingTime();
+            Long idleTime = row.getIdleTime();
+            Double fuelSpent = row.getFuelSpent();
+
+            long totalSeconds = (drivingTime != null ? drivingTime : 0L) + (idleTime != null ? idleTime : 0L);
+            if (totalSeconds <= 0L || fuelSpent == null || fuelSpent <= 0.0) {
+                row.setGetAverageFuelSpentPer1h(0.0);
+                continue;
+            }
+
+            double totalHours = totalSeconds / 3600.0;
+            row.setGetAverageFuelSpentPer1h(fuelSpent / totalHours);
+        }
+
+        return reportRows;
 
     }
 

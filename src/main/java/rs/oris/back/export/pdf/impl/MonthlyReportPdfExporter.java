@@ -69,7 +69,6 @@ public class MonthlyReportPdfExporter extends PdfExporter {
             Long totalRpmInTime=0L;
             Integer counterFuelPer100Km=1;
             Double totalDistanceTraveled=0.0;
-            Integer counterFuelPer1h=1;
             Double totalFuelConsumption=0.0;
             Double totalFuelPer1HConsumption=0.0;
             Double totalFuelPer100KMConsumption=0.0;
@@ -85,17 +84,17 @@ public class MonthlyReportPdfExporter extends PdfExporter {
                     totalIdleTime+=monthlyFuelConsumptionReport.getIdleTime();
                     totalFuelConsumption+=monthlyFuelConsumptionReport.getFuelSpent();
                     totalDistanceTraveled+=monthlyFuelConsumptionReport.getDistanceTraveled();
-                    if(monthlyFuelConsumptionReport.getGetAverageFuelSpentPer1h()!=0){
-                        totalFuelPer1HConsumption=(totalFuelPer1HConsumption+ monthlyFuelConsumptionReport.getGetAverageFuelSpentPer1h())/counterFuelPer1h;
-                        counterFuelPer1h++;
-
-                    }
 
                 }
 
 
 
 
+            }
+
+            long totalDrivingAndIdleSeconds = totalDrivingTime + totalIdleTime;
+            if (totalDrivingAndIdleSeconds > 0) {
+                totalFuelPer1HConsumption = totalFuelConsumption / (totalDrivingAndIdleSeconds / 3600.0);
             }
 
             //Dodaj prazno polje
