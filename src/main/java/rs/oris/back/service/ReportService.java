@@ -224,7 +224,7 @@ public class ReportService {
         //Mapiranje podataka u  DriverRelationVehicleRoutingInfo
         List<MonthFuelReportEngineDTO> mappedList = byImeiIn.stream().map(element -> new MonthFuelReportEngineDTO(
                         element.getImei(),
-                        element.getFuelMargine() != null ? element.getFuelMargine() : 0,
+                        element.getEngineSize(),
                         element.getRegistration(),
                         (element.getModel() == null || element.getModel().isEmpty()) ? element.getManufacturer() : element.getModel()))
                 .collect(Collectors.toList());
@@ -285,7 +285,7 @@ public class ReportService {
         //Mapiranje podataka u  DriverRelationVehicleRoutingInfo
         List<MonthFuelReportEngineDTO> mappedList = byImeiIn.stream().map(element -> new MonthFuelReportEngineDTO(
                         element.getImei(),
-                        element.getFuelMargine() != null ? element.getFuelMargine() : 0,
+                        element.getEngineSize(),
                         element.getRegistration(),
                         (element.getModel() == null || element.getModel().isEmpty()) ? element.getManufacturer() : element.getModel()))
                 .collect(Collectors.toList());
