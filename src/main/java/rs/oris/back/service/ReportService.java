@@ -229,6 +229,20 @@ public class ReportService {
                         (element.getModel() == null || element.getModel().isEmpty()) ? element.getManufacturer() : element.getModel()))
                 .collect(Collectors.toList());
 
+        long nonPositiveEngineSizeCount = mappedList.stream()
+                .filter(element -> element.getEngineSize() <= 0)
+                .count();
+        log.info("Monthly fuel payload summary: from={}, to={}, imeiCount={}, fuelMargin={}, emptyingMargin={}, nonPositiveEngineSizeCount={}",
+                from, to, mappedList.size(), fuelMargin, emptyingMargin, nonPositiveEngineSizeCount);
+        if (nonPositiveEngineSizeCount > 0) {
+            String badEngineImeis = mappedList.stream()
+                    .filter(element -> element.getEngineSize() <= 0)
+                    .map(MonthFuelReportEngineDTO::getImei)
+                    .limit(20)
+                    .collect(Collectors.joining(","));
+            log.warn("Monthly fuel payload contains non-positive engineSize for imeis={}", badEngineImeis);
+        }
+
         //Poziva se metoda na drugom mikroserivsu koja obradjuje dalje
         List<MonthlyFuelConsumptionReport> reportRows = galebRestComunication.getMonthlyFuelConsumptionReports(from, to, mappedList, fuelMargin, emptyingMargin).getBody();
         if (reportRows == null) {
@@ -289,6 +303,20 @@ public class ReportService {
                         element.getRegistration(),
                         (element.getModel() == null || element.getModel().isEmpty()) ? element.getManufacturer() : element.getModel()))
                 .collect(Collectors.toList());
+
+        long nonPositiveEngineSizeCount = mappedList.stream()
+                .filter(element -> element.getEngineSize() <= 0)
+                .count();
+        log.info("Effective working hours payload summary: from={}, to={}, imeiCount={}, rpm={}, fuelMargin={}, emptyingMargin={}, nonPositiveEngineSizeCount={}",
+                from, to, mappedList.size(), rpm, fuelMargin, emptyingMargin, nonPositiveEngineSizeCount);
+        if (nonPositiveEngineSizeCount > 0) {
+            String badEngineImeis = mappedList.stream()
+                    .filter(element -> element.getEngineSize() <= 0)
+                    .map(MonthFuelReportEngineDTO::getImei)
+                    .limit(20)
+                    .collect(Collectors.joining(","));
+            log.warn("Effective working hours payload contains non-positive engineSize for imeis={}", badEngineImeis);
+        }
 
         //Poziva se metoda na drugom mikroserivsu koja obradjuje dalje
         return galebRestComunication.getEffectiveWorkingHoursReport(from, to, mappedList, rpm, fuelMargin, emptyingMargin).getBody();
