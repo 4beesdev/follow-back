@@ -3799,12 +3799,13 @@ public class ReportService {
     /**
      * Vraca izvestaj o stajanjima
      *
-     * @param list    lista stajanja
-     * @param eid     =2 - vraca pdf, u suprotnom workbook
-     * @param minIdle
+     * @param list         lista stajanja
+     * @param eid          =2 - vraca pdf, u suprotnom workbook
+     * @param minIdle      minimalan period mirovanja u minutima
+     * @param showMinIdle  ako true, prikazuje blok "Minimalan period mirovanja" i vrednost; ako false, taj blok se ne iscrtava
      * @throws Exception
      */
-    public byte[] standingExport(List<Idle> list, int eid, String fromS, String toS, int min, int minIdle) throws Exception {
+    public byte[] standingExport(List<Idle> list, int eid, String fromS, String toS, int min, int minIdle, boolean showMinIdle) throws Exception {
 
         try {
             XSSFWorkbook workbook = new XSSFWorkbook();
@@ -3908,19 +3909,21 @@ public class ReportService {
             row.getCell(cellCount).setCellStyle(textStyle);
             row.getCell(cellCount++).setCellValue(min + " minuta");
 
-            cellCount = 0;
-            row = sheet.createRow(++rowCount);
-            row.createCell(cellCount);
-            sheet.addMergedRegion(new CellRangeAddress(8, 8, 0, 2));
-            row.getCell(cellCount).setCellStyle(upperStyle);
-            row.getCell(cellCount++).setCellValue("Minimalan period mirovanja:");
+            if (showMinIdle) {
+                cellCount = 0;
+                row = sheet.createRow(++rowCount);
+                row.createCell(cellCount);
+                sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 0, 2));
+                row.getCell(cellCount).setCellStyle(upperStyle);
+                row.getCell(cellCount++).setCellValue("Minimalan period mirovanja:");
 
-            cellCount = 0;
-            row = sheet.createRow(++rowCount);
-            row.createCell(cellCount);
-            sheet.addMergedRegion(new CellRangeAddress(9, 9, 0, 2));
-            row.getCell(cellCount).setCellStyle(textStyle);
-            row.getCell(cellCount++).setCellValue(minIdle + " minuta");
+                cellCount = 0;
+                row = sheet.createRow(++rowCount);
+                row.createCell(cellCount);
+                sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 0, 2));
+                row.getCell(cellCount).setCellStyle(textStyle);
+                row.getCell(cellCount++).setCellValue(minIdle + " minuta");
+            }
             row = sheet.createRow(++rowCount);
             row = sheet.createRow(++rowCount);
             cellCount = 0;

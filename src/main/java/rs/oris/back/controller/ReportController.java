@@ -1205,7 +1205,7 @@ public class ReportController {
         try {
             List<Idle> idleList = izvestajOStajanju2(Arrays.asList(imeis), dateFromS, dateToS, hfrom, mfrom, hto, mto, min, minIdle, isIdle);
 
-            return reportService.standingExport(idleList, eid, dateFromS, dateToS, min, minIdle);
+            return reportService.standingExport(idleList, eid, dateFromS, dateToS, min, minIdle, isIdle);
         }catch (Exception e) {
             throw e;
         }
