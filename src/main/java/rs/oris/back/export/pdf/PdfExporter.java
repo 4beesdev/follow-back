@@ -112,7 +112,9 @@ public class PdfExporter {
                 } else
 //                Ako je polje tipa LocalDateTime
                     if (field.getType() == LocalDateTime.class) {
-                    String formatedTime = formatLocalDateTime((LocalDateTime) value);
+                    String formatedTime = field.isAnnotationPresent(NoTimezoneConversion.class)
+                            ? formatLocalDateTimeAsIs((LocalDateTime) value)
+                            : formatLocalDateTime((LocalDateTime) value);
                     cell = new PdfPCell(new Phrase(formatedTime, cellDataFont));
                 } else
                     //Ako je polje tipa Double i ima anotaciju Round
@@ -162,6 +164,11 @@ public class PdfExporter {
     protected String formatLocalDateTime(LocalDateTime value) {
         return toSerbianTimeZone(value);
 
+    }
+
+    protected String formatLocalDateTimeAsIs(LocalDateTime value) {
+        if (value == null) return "";
+        return value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
     //Formatiraj vreme

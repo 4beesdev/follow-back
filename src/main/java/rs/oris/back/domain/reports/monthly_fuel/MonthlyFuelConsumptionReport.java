@@ -4,6 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import rs.oris.back.export.Exporable;
+import rs.oris.back.export.annotations.NoTimezoneConversion;
 import rs.oris.back.export.annotations.PdfTableElement;
 import rs.oris.back.export.annotations.Round;
 import rs.oris.back.export.annotations.TimestampFormat;
@@ -33,10 +34,12 @@ public class MonthlyFuelConsumptionReport implements Exporable {
     //Krajnje vreme
 
     private LocalDateTime endTime;
+    @NoTimezoneConversion
     @PdfTableElement(title = "Vreme pocetka")
     @XlsTableElement(title = "Vreme pocetka")
     private LocalDateTime displayStartTime;
 
+    @NoTimezoneConversion
     @PdfTableElement(title = "Vreme kraja")
     @XlsTableElement(title = "Vreme kraja")
     private LocalDateTime displayEndTime;

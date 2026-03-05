@@ -114,6 +114,11 @@ public class XlsExporter {
        return toSerbianTimeZone(value);
     }
 
+    protected String formatLocalDateTimeAsIs(LocalDateTime value) {
+        if (value == null) return "";
+        return value.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
     protected void setTitle(Sheet sheet, String title, String subtitle) {
 
         //Kreiraj red za naslov
@@ -235,7 +240,9 @@ public class XlsExporter {
                 } else
                     //Ako je polje tipa LocalDateTime
                     if (field.getType() == LocalDateTime.class && value instanceof LocalDateTime) {
-                    String formattedTime = formatLocalDateTime((LocalDateTime) value);
+                    String formattedTime = field.isAnnotationPresent(NoTimezoneConversion.class)
+                            ? formatLocalDateTimeAsIs((LocalDateTime) value)
+                            : formatLocalDateTime((LocalDateTime) value);
                     cell.setCellValue(formattedTime);
                 } else
                     //Ako je polje tipa Double i ima anotaciju Round
