@@ -8,6 +8,7 @@ COPY assets ./assets
 RUN mvn package -DskipTests -B
 
 FROM eclipse-temurin:8-jre
+RUN apt-get update && apt-get install -y --no-install-recommends fontconfig fonts-dejavu && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=builder /build/target/jadran-server.jar ./app.jar
 EXPOSE 8000
