@@ -2071,7 +2071,7 @@ public class ReportService {
         header.setBorderLeft(BorderStyle.THIN);
         header.setBorderRight(BorderStyle.THIN);
 
-        // telo – levo/centar + borderi
+        // telo – levo/centar + borderi (beli redovi)
         XSSFCellStyle bodyLeft = wb.createCellStyle();
         bodyLeft.setFont(bodyFont);
         bodyLeft.setAlignment(HorizontalAlignment.LEFT);
@@ -2085,19 +2085,39 @@ public class ReportService {
         bodyCenter.cloneStyleFrom(bodyLeft);
         bodyCenter.setAlignment(HorizontalAlignment.CENTER);
 
+        // telo – alternating (svetlo sivi redovi)
+        XSSFCellStyle bodyLeftAlt = wb.createCellStyle();
+        bodyLeftAlt.cloneStyleFrom(bodyLeft);
+        bodyLeftAlt.setFillForegroundColor(rgb(241,245,249));
+        bodyLeftAlt.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        XSSFCellStyle bodyCenterAlt = wb.createCellStyle();
+        bodyCenterAlt.cloneStyleFrom(bodyCenter);
+        bodyCenterAlt.setFillForegroundColor(rgb(241,245,249));
+        bodyCenterAlt.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
         // brojčani formati
         CreationHelper ch = wb.getCreationHelper();
-        XSSFCellStyle distStyle = wb.createCellStyle();  // 0.##  (pređeni put)
+        XSSFCellStyle distStyle = wb.createCellStyle();
         distStyle.cloneStyleFrom(bodyCenter);
         distStyle.setDataFormat(ch.createDataFormat().getFormat("0.##"));
+        XSSFCellStyle distStyleAlt = wb.createCellStyle();
+        distStyleAlt.cloneStyleFrom(bodyCenterAlt);
+        distStyleAlt.setDataFormat(ch.createDataFormat().getFormat("0.##"));
 
-        XSSFCellStyle maxStyle = wb.createCellStyle();   // 0     (max)
+        XSSFCellStyle maxStyle = wb.createCellStyle();
         maxStyle.cloneStyleFrom(bodyCenter);
         maxStyle.setDataFormat(ch.createDataFormat().getFormat("0"));
+        XSSFCellStyle maxStyleAlt = wb.createCellStyle();
+        maxStyleAlt.cloneStyleFrom(bodyCenterAlt);
+        maxStyleAlt.setDataFormat(ch.createDataFormat().getFormat("0"));
 
-        XSSFCellStyle avgStyle = wb.createCellStyle();   // 0.00  (prosek)
+        XSSFCellStyle avgStyle = wb.createCellStyle();
         avgStyle.cloneStyleFrom(bodyCenter);
         avgStyle.setDataFormat(ch.createDataFormat().getFormat("0.00"));
+        XSSFCellStyle avgStyleAlt = wb.createCellStyle();
+        avgStyleAlt.cloneStyleFrom(bodyCenterAlt);
+        avgStyleAlt.setDataFormat(ch.createDataFormat().getFormat("0.00"));
 
         // ===== GORNJI DEO (naslov + meta) =====
         int rIdx = 0;
@@ -2145,7 +2165,7 @@ public class ReportService {
         // Ako želiš tačno 9 kolona (A..I) – poslednja je prazna “distancer”.
         int columnCount = 8;
         Row h = sh.createRow(rIdx++);
-        h.setHeightInPoints(30);
+        h.setHeightInPoints(34);
         for (int c = 0; c < columnCount; c++) {
             Cell hc = h.createCell(c);
             if (c < 8) hc.setCellValue(cols[c]);  // stvarne kolone do H
@@ -2157,9 +2177,16 @@ public class ReportService {
                 .filter(s -> s.getGpsList() != null && !s.getGpsList().isEmpty())
                 .collect(Collectors.toList());
 
-        int rb = 1;
+        int rb = 0;
         for (DTOSpeed sp : data) {
             if (sp.isPeak() && !peakSelected) continue;
+
+            boolean alt = (rb % 2 == 1);
+            XSSFCellStyle bL = alt ? bodyLeftAlt   : bodyLeft;
+            XSSFCellStyle bC = alt ? bodyCenterAlt : bodyCenter;
+            XSSFCellStyle dS = alt ? distStyleAlt  : distStyle;
+            XSSFCellStyle mS = alt ? maxStyleAlt   : maxStyle;
+            XSSFCellStyle aS = alt ? avgStyleAlt   : avgStyle;
 
             Gs100 first = sp.getGpsList().get(0);
             Vehicle v = (first != null) ? byImei.get(first.getImei()) : null;
@@ -2174,23 +2201,23 @@ public class ReportService {
 
             // 1) Broj registracije (zapravo “Registracije” u tabeli) – u slici ova kolona je sama;
             // po dogovoru: prva kolona je "Registracije" (nema posebnog rednog broja).
-            Cell cc = row.createCell(c++); cc.setCellValue(reg); cc.setCellStyle(bodyLeft);
+            Cell cc = row.createCell(c++); cc.setCellValue(reg); cc.setCellStyle(bL);
 
             // 2) Proizvođač/Model
-            cc = row.createCell(c++); cc.setCellValue(mm); cc.setCellStyle(bodyLeft);
+            cc = row.createCell(c++); cc.setCellValue(mm); cc.setCellStyle(bL);
 
             // 3) Vreme Početka
             cc = row.createCell(c++);
-            cc.setCellValue(formatTs(sp.getStartTimestamp())); // Timestamp -> String "dd.MM.yy HH:mm:ss"
-            cc.setCellStyle(bodyCenter);
+            cc.setCellValue(formatTs(sp.getStartTimestamp()));
+            cc.setCellStyle(bC);
 
             // 4) Vreme Kraja
             cc = row.createCell(c++);
             cc.setCellValue(formatTs(sp.getEndTimestamp()));
-            cc.setCellStyle(bodyCenter);
+            cc.setCellStyle(bC);
 
             // 5) Pređeni put
-            cc = row.createCell(c++); cc.setCellValue(d(sp.getRoadTraveled())); cc.setCellStyle(distStyle);
+            cc = row.createCell(c++); cc.setCellValue(d(sp.getRoadTraveled())); cc.setCellStyle(dS);
 
             // 6) Vreme vožnje (ili "Pik")
             cc = row.createCell(c++);
@@ -2200,26 +2227,23 @@ public class ReportService {
             } else {
                 cc.setCellValue("Pik");
             }
-            cc.setCellStyle(bodyCenter);
+            cc.setCellStyle(bC);
 
-            // 7) Max brzina
-            cc = row.createCell(c++); cc.setCellValue(d(sp.getMaxSpeed())); cc.setCellStyle(maxStyle);
+            cc = row.createCell(c++); cc.setCellValue(d(sp.getMaxSpeed())); cc.setCellStyle(mS);
+            cc = row.createCell(c++); cc.setCellValue(d(sp.getAvgSpeed())); cc.setCellStyle(aS);
 
-            // 8) Prosečna brzina
-            cc = row.createCell(c++); cc.setCellValue(d(sp.getAvgSpeed())); cc.setCellStyle(avgStyle);
-
+            rb++;
         }
 
-        // ===== AUTO SIZE =====
-        for (int i = 0; i < columnCount; i++) {
-            try { sh.autoSizeColumn(i); } catch (Exception ignored) {}
-        }
-
-        sh.setColumnWidth(0, 10 * 256);  // Registracije
-        sh.setColumnWidth(1, 16 * 256);  // Proizvođač/Model
-        sh.setColumnWidth(5, 10 * 256);  // Vreme vožnje
+        // ===== COLUMN WIDTHS =====
+        sh.setColumnWidth(0, 12 * 256);  // Registracije
+        sh.setColumnWidth(1, 18 * 256);  // Proizvođač/Model
+        sh.setColumnWidth(2, 21 * 256);  // Vreme Početka
+        sh.setColumnWidth(3, 21 * 256);  // Vreme Kraja
+        sh.setColumnWidth(4, 10 * 256);  // Pređeni put
+        sh.setColumnWidth(5, 11 * 256);  // Vreme vožnje
         sh.setColumnWidth(6, 10 * 256);  // Max brzina
-        sh.setColumnWidth(7, 10 * 256);  // Prosečna brzina
+        sh.setColumnWidth(7, 11 * 256);  // Prosečna brzina
 
         // ===== IZVOZ =====
         if (export == 2) {
