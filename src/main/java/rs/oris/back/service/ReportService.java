@@ -617,7 +617,7 @@ public class ReportService {
      *
      * @param export =2 znaci vrati pdf, u suprotnom workbook
      */
-    public byte[] routeExport(String res, String imei, Vehicle v, int export, String fromS, String toS) throws Exception {
+    public byte[] routeExport(String res, String imei, Vehicle v, int export, String fromS, String toS, String firmName) throws Exception {
         if (res.length() < 20) {
             return null;
         }
@@ -626,7 +626,6 @@ public class ReportService {
         List<RouteReport> list = mapper.readValue(res.substring(8, res.length() - 1), new TypeReference<List<RouteReport>>() {
         });
 
-        //Postavi default vrednosti
         list.forEach(x -> {
             if (x.getBoardKmDiffStartEnd() == null)
                 x.setBoardKmDiffStartEnd(0.0);
@@ -642,11 +641,12 @@ public class ReportService {
                 x.setDiffEngineWorkTimeInHours(0.0);
         });
 
-        //Napravi objekat koji radi sa xls-om
         XSSFWorkbook workbook = new XSSFWorkbook();
         XSSFSheet sheet = workbook.createSheet("Relacije");
 
-        //Definisi stilove
+        String period = "Od: " + fromS + "  Do: " + toS;
+        int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o relacijama vozila", firmName, period);
+
         XSSFCellStyle dateCellStyle2 = workbook.createCellStyle();
         dateCellStyle2.setFillForegroundColor(new XSSFColor(new java.awt.Color(220, 223, 227)));
 
@@ -666,8 +666,6 @@ public class ReportService {
         font2.setFontHeightInPoints((short) 11);
         font2.setBold(true);
         upperStyle.setFont(font2);
-        //Postavi da text bude vertikalan
-        //        upperStyle.setRotation((short) 90);
         upperStyle.setVerticalAlignment(VerticalAlignment.BOTTOM);
         upperStyle.setAlignment(HorizontalAlignment.CENTER);
         upperStyle.setWrapText(true);
@@ -680,58 +678,15 @@ public class ReportService {
         titleUpperStyle.setAlignment(HorizontalAlignment.CENTER);
         titleUpperStyle.setWrapText(true);
 
-        int rowCount = 0;
         int cellCount = 0;
         XSSFCellStyle textStyle = workbook.createCellStyle();
         textStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(222, 222, 222)));
         textStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-        //Napravi red
-        Row row = sheet.createRow(rowCount++);
-
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 4));
-        //Dodaj naslov
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(titleUpperStyle);
-        row.getCell(cellCount++).setCellValue("Izveštaj o relacijama vozila");
-
-        row = sheet.createRow(++rowCount);
-
-        cellCount = 0;
-        row = sheet.createRow(rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(titleUpperStyle);
-        row.getCell(cellCount++).setCellValue("OD:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(fromS);
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(titleUpperStyle);
-        row.getCell(cellCount++).setCellValue("DO:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(toS);
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row = sheet.createRow(++rowCount);
-        //ono kraj
-
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
         df.setTimeZone(TimeZone.getTimeZone("Europe/Belgrade"));
 
-        //Dodaj naslove
-
+        Row row = sheet.createRow(rowCount++);
         row.createCell(cellCount);
         row.getCell(cellCount).setCellStyle(upperStyle);
         row.setHeightInPoints(70);
@@ -1088,7 +1043,7 @@ public class ReportService {
     }
 
 
-    public byte[] routeExport2(List<RouteReport> list, List<String> imeis, List<Vehicle> vehicles, int export, String fromS, String toS) throws Exception {
+    public byte[] routeExport2(List<RouteReport> list, List<String> imeis, List<Vehicle> vehicles, int export, String fromS, String toS, String firmName) throws Exception {
         if (list == null || list.isEmpty()) {
             return null;
         }
@@ -1148,57 +1103,15 @@ public class ReportService {
         titleUpperStyle.setAlignment(HorizontalAlignment.CENTER);
         titleUpperStyle.setWrapText(true);
 
-        int rowCount = 0;
+        String period = "Od: " + fromS + "  Do: " + toS;
+        int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o relacijama vozila", firmName, period);
         int cellCount = 0;
-        XSSFCellStyle textStyle = workbook.createCellStyle();
-        textStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(222, 222, 222)));
-        textStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-
-        //Napravi red
-        Row row = sheet.createRow(rowCount++);
-
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 4));
-        //Dodaj naslov
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(titleUpperStyle);
-        row.getCell(cellCount++).setCellValue("Izveštaj o relacijama vozila");
-
-        row = sheet.createRow(++rowCount);
-
-        cellCount = 0;
-        row = sheet.createRow(rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(titleUpperStyle);
-        row.getCell(cellCount++).setCellValue("OD:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(fromS);
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(titleUpperStyle);
-        row.getCell(cellCount++).setCellValue("DO:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(toS);
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row = sheet.createRow(++rowCount);
-        //ono kraj
 
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
         df.setTimeZone(TimeZone.getTimeZone("Europe/Belgrade"));
 
         //Dodaj naslove
+        Row row = sheet.createRow(rowCount++);
 
         row.createCell(cellCount);
         row.getCell(cellCount).setCellStyle(upperStyle);
@@ -1778,7 +1691,8 @@ public class ReportService {
             String dateF,
             String dateT,
             boolean peakSelected,
-            int max
+            int max,
+            String firmName
     ) throws Exception {
 
         Optional<Vehicle> optionalVehicle = vehicleRepository.findByImei(imei);
@@ -1864,37 +1778,8 @@ public class ReportService {
         spdStyle.setDataFormat(fmtSpd);
 
         // ===== CRTANJE: NASLOV, META, TABELA =====
-        int rIdx = 0;
-
-        // Naslov A1:H1
-        Row r = sh.createRow(rIdx++);
-        r.setHeightInPoints(24);
-        r.createCell(0).setCellValue("Izveštaj o prekoračenju brzine");
-        r.getCell(0).setCellStyle(titleStyle);
-        sh.addMergedRegion(new CellRangeAddress(0,0,0,7)); // do H
-
-        // prazan red
-        rIdx++;
-
-        // Meta 1: Prekoračenje brzine
-        r = sh.createRow(rIdx++);
-        r.setHeightInPoints(18);
-        r.createCell(0).setCellValue("Prekoračenje brzine:");
-        r.getCell(0).setCellStyle(metaLabel);
-        r.createCell(1).setCellValue(max + " (Km/h)");
-        r.getCell(1).setCellStyle(metaValue);
-
-        // Meta 2: Datum/Vreme
-        r = sh.createRow(rIdx++);
-        r.setHeightInPoints(18);
-        r.createCell(0).setCellValue("Datum/Vreme:");
-        r.getCell(0).setCellStyle(metaLabel);
-        r.createCell(1).setCellValue("Od: " + dateF + "    Do: " + dateT);
-        r.getCell(1).setCellStyle(metaValue);
-
-
-        // razmak
-        rIdx++;
+        String period = "Od: " + dateF + "  Do: " + dateT;
+        int rIdx = addExcelReportHeader(wb, sh, "Izveštaj o prekoračenju brzine", firmName, period);
 
         String mm = (Objects.toString(veh.getManufacturer(), "") +
                 (veh.getModel()!=null && !veh.getModel().isEmpty() ? (" " + veh.getModel()) : "")).trim();
@@ -2343,7 +2228,7 @@ public class ReportService {
      *
      * @param export =2 znaci vrati pdf, u suprotnom workbook
      */
-    public byte[] ippExport(ArrayList<Ipp> ippList, int export, Timestamp dateFromS, Timestamp dateToS) throws Exception {
+    public byte[] ippExport(ArrayList<Ipp> ippList, int export, Timestamp dateFromS, Timestamp dateToS, String firmName) throws Exception {
 
         log.info("####################################");
         log.info(LocalDateTime.now() + " - Generisanje izvestaja o predjenom putu za " + ippList.size() + " vozila.");
@@ -2381,50 +2266,10 @@ public class ReportService {
         //                createHelper.createDataFormat().getFormat("dd/mm/yyyy HH:mm:ss"));
 
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-        // df.setTimeZone(TimeZone.getTimeZone("Europe/Belgrade"));
-        String timeFrom = df.format(dateFromS);
-        String timeTo = df.format(dateToS);
-
-        int rowCount = 0;
+        String period = "Od: " + df.format(dateFromS) + "  Do: " + df.format(dateToS);
+        int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o pređenom putu", firmName, period);
         int cellCount = 0;
-
-        //ono pocetak
         Row row = sheet.createRow(rowCount++);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 4));
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Izveštaj o pređenom putu");
-        row = sheet.createRow(++rowCount);
-
-        cellCount = 0;
-        row = sheet.createRow(rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("OD:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(timeFrom);
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("DO:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(timeTo);
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row = sheet.createRow(++rowCount);
-        //ono kraj
 
         cellCount = 0;
         row.createCell(cellCount);
@@ -2548,6 +2393,97 @@ public class ReportService {
     }
 
     /**
+     * Adds a standardized header (logo, title, company, date, period) to any Excel report sheet.
+     * Returns the next available row index.
+     */
+    private int addExcelReportHeader(XSSFWorkbook wb, XSSFSheet sh, String title, String firmName, String period) {
+        int rIdx = 0;
+        try {
+            InputStream logoStream = getClass().getResourceAsStream("/images/oris-logo.png");
+            if (logoStream != null) {
+                byte[] logoBytes = IOUtils.toByteArray(logoStream);
+                logoStream.close();
+                int pictureIdx = wb.addPicture(logoBytes, Workbook.PICTURE_TYPE_PNG);
+                XSSFDrawing drawing = sh.createDrawingPatriarch();
+                XSSFClientAnchor anchor = new XSSFClientAnchor(0, 0, 0, 0, 0, 0, 2, 3);
+                anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+                drawing.createPicture(anchor, pictureIdx);
+            }
+        } catch (Exception ignored) {}
+
+        for (int i = 0; i < 3; i++) {
+            Row lr = sh.createRow(rIdx++);
+            lr.setHeightInPoints(20);
+        }
+        rIdx++;
+
+        XSSFFont tFont = wb.createFont();
+        tFont.setBold(true);
+        tFont.setFontHeightInPoints((short) 14);
+        XSSFFont mBold = wb.createFont();
+        mBold.setBold(true);
+        mBold.setFontHeightInPoints((short) 10);
+        XSSFFont mFont = wb.createFont();
+        mFont.setFontHeightInPoints((short) 10);
+
+        XSSFCellStyle tStyle = wb.createCellStyle();
+        tStyle.setFont(tFont);
+        tStyle.setAlignment(HorizontalAlignment.LEFT);
+        tStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        tStyle.setBorderBottom(BorderStyle.MEDIUM);
+
+        XSSFCellStyle mlStyle = wb.createCellStyle();
+        mlStyle.setFont(mBold);
+        mlStyle.setAlignment(HorizontalAlignment.LEFT);
+        mlStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        mlStyle.setFillForegroundColor(rgb(220, 223, 227));
+        mlStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        XSSFCellStyle mvStyle = wb.createCellStyle();
+        mvStyle.setFont(mFont);
+        mvStyle.setAlignment(HorizontalAlignment.LEFT);
+        mvStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        Row r = sh.createRow(rIdx++);
+        r.setHeightInPoints(28);
+        r.createCell(0).setCellValue(title);
+        r.getCell(0).setCellStyle(tStyle);
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 0, 7));
+        rIdx++;
+
+        r = sh.createRow(rIdx++);
+        r.setHeightInPoints(18);
+        r.createCell(0).setCellValue("Kompanija:");
+        r.getCell(0).setCellStyle(mlStyle);
+        r.createCell(1).setCellValue(firmName != null ? firmName : "");
+        r.getCell(1).setCellStyle(mvStyle);
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 3));
+
+        r = sh.createRow(rIdx++);
+        r.setHeightInPoints(18);
+        r.createCell(0).setCellValue("Generisano:");
+        r.getCell(0).setCellStyle(mlStyle);
+        String genAt = java.time.LocalDateTime.now(java.time.ZoneId.of("Europe/Belgrade"))
+                .format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+        r.createCell(1).setCellValue(genAt);
+        r.getCell(1).setCellStyle(mvStyle);
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 3));
+
+        if (period != null && !period.isEmpty()) {
+            r = sh.createRow(rIdx++);
+            r.setHeightInPoints(18);
+            r.createCell(0).setCellValue("Period:");
+            r.getCell(0).setCellStyle(mlStyle);
+            r.createCell(1).setCellValue(period);
+            r.getCell(1).setCellStyle(mvStyle);
+            sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 4));
+        }
+
+        rIdx++;
+        return rIdx;
+    }
+
+    /**
      * vraca pdf verziju izvestaja koju dobija iz workbook fajla
      */
     private byte[] getPdf(XSSFWorkbook workbook, boolean orientation) throws Exception {
@@ -2601,7 +2537,7 @@ public class ReportService {
      * @param export =2 znaci vrati pdf, u suprotnom workbook
      */
     public byte[] ippmExport(ArrayList<Ippm> ippmArrayList, Timestamp tsFrom, Timestamp tsTo, int export, int working, int hFrom, int mFrom,
-            int hTo, int mTo, int hfromsa,int mfromsa,int htosa,int mtosa,int hfromsu,int mfromsu,int htosu,int mtosu) throws Exception {
+            int hTo, int mTo, int hfromsa,int mfromsa,int htosa,int mtosa,int hfromsu,int mfromsu,int htosu,int mtosu, String firmName) throws Exception {
         if (ippmArrayList.size() == 0) {
             return null;
         }
@@ -2643,16 +2579,11 @@ public class ReportService {
 
         int days = c.getActualMaximum(Calendar.DAY_OF_MONTH);
 
-        int rowCount = 0;
-        int cellCount = 0;
-
-        SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
         SimpleDateFormat df2 = new SimpleDateFormat("dd.MM.yyyy");
-        Row row = sheet.createRow(rowCount++);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 4));
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Izveštaj o pređenom putu - mesečni");
+        String period = "Od: " + df2.format(tsFrom) + "  Do: " + df2.format(tsTo);
+        int rowCount = addExcelReportHeader(workbook, sheet, "Mesečni izveštaj o pređenom putu", firmName, period);
+        int cellCount = 0;
+        Row row;
 
         if (working == 1) {
             System.out.println("OVDE1");
@@ -2728,33 +2659,7 @@ public class ReportService {
 
 
 
-        row = sheet.createRow(++rowCount);
         cellCount = 0;
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("OD:");
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(df2.format(tsFrom));
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("DO:");
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(df2.format(tsTo));
-
-        cellCount = 0;
-
-        row = sheet.createRow(++rowCount);
         row = sheet.createRow(++rowCount);
         row.createCell(cellCount);
         row.getCell(cellCount).setCellStyle(upperStyle);
@@ -3467,7 +3372,7 @@ public class ReportService {
      * @return izv3staj u byte array-u
      * @throws Exception
      */
-    public byte[] exportRouteIskiakanje(List<DTORotue> wholeList, int eid, long dateFromS, long dateToS) throws Exception {
+    public byte[] exportRouteIskiakanje(List<DTORotue> wholeList, int eid, long dateFromS, long dateToS, String firmName) throws Exception {
         XSSFWorkbook workbook = new XSSFWorkbook();
         XSSFSheet sheet = workbook.createSheet("Povreda rute");
 
@@ -3503,46 +3408,10 @@ public class ReportService {
         dateCellStyle2.setDataFormat(
                 createHelper.createDataFormat().getFormat("dd/mm/yyyy HH:mm:ss"));
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-
-        int rowCount = 0;
+        String period = "Od: " + df.format(new Timestamp(dateFromS)) + "  Do: " + df.format(new Timestamp(dateToS));
+        int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o povredama ruta", firmName, period);
         int cellCount = 0;
-        //ono pocetak
         Row row = sheet.createRow(rowCount++);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 4));
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Izveštaj o povredama ruta");
-        row = sheet.createRow(++rowCount);
-
-        cellCount = 0;
-        row = sheet.createRow(rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("OD:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(df.format(new Timestamp(dateFromS)));
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("DO:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(df.format(new Timestamp(dateToS)));
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row = sheet.createRow(++rowCount);
-        //ono kraj
 
         row.createCell(cellCount);
         row.getCell(cellCount).setCellStyle(upperStyle);
@@ -3925,7 +3794,7 @@ public class ReportService {
      * @param showMinIdle  ako true, prikazuje blok "Minimalan period mirovanja" i vrednost; ako false, taj blok se ne iscrtava
      * @throws Exception
      */
-    public byte[] standingExport(List<Idle> list, int eid, String fromS, String toS, int min, int minIdle, boolean showMinIdle) throws Exception {
+    public byte[] standingExport(List<Idle> list, int eid, String fromS, String toS, int min, int minIdle, boolean showMinIdle, String firmName) throws Exception {
 
         try {
             XSSFWorkbook workbook = new XSSFWorkbook();
@@ -3972,82 +3841,11 @@ public class ReportService {
             dateCellStyle2.setFillForegroundColor(new XSSFColor(new java.awt.Color(220, 223, 227)));
             //style1.setFillPattern(CellStyle.SOLID_FOREGROUND);
 
-            int rowCount = 0;
+            String period = "Od: " + fromS + "  Do: " + toS;
+            int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o stajanjima", firmName, period);
             int cellCount = 0;
             sheet.setColumnWidth(0, 5000);
-            //ono pocetak
             Row row = sheet.createRow(rowCount++);
-            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 6));
-            row.createCell(cellCount);
-            row.getCell(cellCount).setCellStyle(upperStyle);
-            row.getCell(cellCount++).setCellValue("Izveštaj o stajanju vozila");
-            row = sheet.createRow(++rowCount);
-
-            cellCount = 0;
-            row = sheet.createRow(rowCount);
-            row.createCell(cellCount);
-            sheet.addMergedRegion(new CellRangeAddress(2, 2, 0, 2));
-            row.getCell(cellCount).setCellStyle(upperStyle);
-            row.getCell(cellCount++).setCellValue("OD:");
-
-
-            cellCount = 0;
-            row = sheet.createRow(++rowCount);
-            row.createCell(cellCount);
-            sheet.addMergedRegion(new CellRangeAddress(3, 3, 0, 2));
-            row.getCell(cellCount).setCellStyle(textStyle);
-            row.getCell(cellCount++).setCellValue(fromS);
-
-
-            cellCount = 0;
-            row = sheet.createRow(++rowCount);
-            row.createCell(cellCount);
-            sheet.addMergedRegion(new CellRangeAddress(4, 4, 0, 2));
-            row.getCell(cellCount).setCellStyle(upperStyle);
-            row.getCell(cellCount++).setCellValue("DO:");
-
-            cellCount = 0;
-            row = sheet.createRow(++rowCount);
-            row.createCell(cellCount);
-            sheet.addMergedRegion(new CellRangeAddress(5, 5, 0, 2));
-            row.getCell(cellCount).setCellStyle(textStyle);
-            row.getCell(cellCount++).setCellValue(toS);
-
-
-            cellCount = 0;
-            row = sheet.createRow(++rowCount);
-            row.createCell(cellCount);
-            sheet.addMergedRegion(new CellRangeAddress(6, 6, 0, 2));
-            row.getCell(cellCount).setCellStyle(upperStyle);
-            row.getCell(cellCount++).setCellValue("Minimalan period stajanja:");
-
-
-            cellCount = 0;
-            row = sheet.createRow(++rowCount);
-            row.createCell(cellCount);
-            sheet.addMergedRegion(new CellRangeAddress(7, 7, 0, 2));
-            row.getCell(cellCount).setCellStyle(textStyle);
-            row.getCell(cellCount++).setCellValue(min + " minuta");
-
-            if (showMinIdle) {
-                cellCount = 0;
-                row = sheet.createRow(++rowCount);
-                row.createCell(cellCount);
-                sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 0, 2));
-                row.getCell(cellCount).setCellStyle(upperStyle);
-                row.getCell(cellCount++).setCellValue("Minimalan period mirovanja:");
-
-                cellCount = 0;
-                row = sheet.createRow(++rowCount);
-                row.createCell(cellCount);
-                sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 0, 2));
-                row.getCell(cellCount).setCellStyle(textStyle);
-                row.getCell(cellCount++).setCellValue(minIdle + " minuta");
-            }
-            row = sheet.createRow(++rowCount);
-            row = sheet.createRow(++rowCount);
-            cellCount = 0;
-            //ono kraj
 
 
             row.createCell(cellCount);
@@ -4225,7 +4023,7 @@ public class ReportService {
      * @return izvestaj o zelenoj voznji
      * @throws Exception
      */
-    public byte[] greenExport(String res, String imei, Vehicle v, int eid, String fromS, String toS) throws Exception {
+    public byte[] greenExport(String res, String imei, Vehicle v, int eid, String fromS, String toS, String firmName) throws Exception {
 
         res = res.substring(8, res.length() - 1);
 
@@ -4256,46 +4054,10 @@ public class ReportService {
         dateCellStyle2.setFillForegroundColor(new XSSFColor(new java.awt.Color(220, 223, 227)));
         //style1.setFillPattern(CellStyle.SOLID_FOREGROUND);
 
-        int rowCount = 0;
+        String period = "Od: " + fromS + "  Do: " + toS;
+        int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o sigurnoj vožnji", firmName, period);
         int cellCount = 0;
-
-        //ono pocetak
         Row row = sheet.createRow(rowCount++);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 4));
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Izveštaj o sigurnoj vоžnji");
-        row = sheet.createRow(++rowCount);
-
-        cellCount = 0;
-        row = sheet.createRow(rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("OD:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(fromS);
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("DO:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(toS);
-
-        row = sheet.createRow(++rowCount);
-        row = sheet.createRow(++rowCount);
-        cellCount = 0;
-        //ono kraj
 
         row.createCell(cellCount);
         row.getCell(cellCount).setCellStyle(upperStyle);

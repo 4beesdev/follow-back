@@ -327,7 +327,12 @@ public class ReportController {
         log.info("####################################");
         log.info(LocalDateTime.now() + " - Generating report for imeis: " + Arrays.toString(imeis));
 
-        return reportService.ippExport(ippList, export, tsFrom, tsTo);
+        String firmName = "";
+        try {
+            Vehicle fv = vehicleService.findByImei(imei);
+            if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
+        } catch (Exception ignore) {}
+        return reportService.ippExport(ippList, export, tsFrom, tsTo, firmName);
     }
 
     @PostMapping("api/firm/{firm_id}/report/ipp/imeis/from/{from}/to/{to}/{hfrom}/{mfrom}/{hto}/{mto}/export/{export_id}")
@@ -355,7 +360,14 @@ public class ReportController {
         Timestamp tsFrom = new Timestamp(from);
         Timestamp tsTo = new Timestamp(to);
 
-        return reportService.ippExport(ippList, export, tsFrom, tsTo);
+        String firmName = "";
+        try {
+            if (!imeis.isEmpty()) {
+                Vehicle fv = vehicleService.findByImei(imeis.get(0));
+                if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
+            }
+        } catch (Exception ignore) {}
+        return reportService.ippExport(ippList, export, tsFrom, tsTo, firmName);
     }
 
 
@@ -517,7 +529,12 @@ public class ReportController {
         Timestamp tsFrom = new Timestamp(from);
         Timestamp tsTo = new Timestamp(to);
 
-        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        String firmName = "";
+        try {
+            Vehicle fv = vehicleService.findByImei(imei);
+            if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
+        } catch (Exception ignore) {}
+        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, firmName);
     }
 
 
@@ -537,7 +554,14 @@ public class ReportController {
         Timestamp tsFrom = new Timestamp(from);
         Timestamp tsTo = new Timestamp(to);
 
-        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        String firmName = "";
+        try {
+            if (!imeis.isEmpty()) {
+                Vehicle fv = vehicleService.findByImei(imeis.get(0));
+                if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
+            }
+        } catch (Exception ignore) {}
+        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, firmName);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -703,7 +727,12 @@ public class ReportController {
         Timestamp tsTo = new Timestamp(to);
 
         //{hfromsa}/{mfromsa}/{htosa}/{mtosa}/{hfromsu}/{mfromsu}/{htosu}/{mtosu}
-        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, working, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu);
+        String firmName = "";
+        try {
+            Vehicle fv = vehicleService.findByImei(imei);
+            if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
+        } catch (Exception ignore) {}
+        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, working, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu, firmName);
     }
 
 
@@ -790,7 +819,8 @@ public class ReportController {
         Timestamp tsTo = new Timestamp(to);
 
         //{hfromsa}/{mfromsa}/{htosa}/{mtosa}/{hfromsu}/{mfromsu}/{htosu}/{mtosu}
-        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, working, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu);
+        String firmName = vehicles.stream().filter(vv -> vv.getFirm() != null).map(vv -> vv.getFirm().getName()).findFirst().orElse("");
+        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, working, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu, firmName);
     }
 
 
@@ -931,7 +961,8 @@ public class ReportController {
         }
         if (listResponse != null) {
             List<DTOSpeed> dtoSpeedList = listResponse.getData();
-            return reportService.speedExport(dtoSpeedList, imei, v, export, dateFromS, dateToS, peakSelected, max);
+            String firmName = (v != null && v.getFirm() != null) ? v.getFirm().getName() : "";
+            return reportService.speedExport(dtoSpeedList, imei, v, export, dateFromS, dateToS, peakSelected, max, firmName);
         }
         return new byte[0];
     }
@@ -1012,7 +1043,8 @@ public class ReportController {
         } else {
             res = getGs100Route(imei, dateFromS, dateToS, hfrom, mfrom, hto, mto, minDistance);
         }
-        return reportService.routeExport(res, imei, v, export, dateFromS, dateToS);
+        String firmName = (v != null && v.getFirm() != null) ? v.getFirm().getName() : "";
+        return reportService.routeExport(res, imei, v, export, dateFromS, dateToS, firmName);
     }
 
     //@PostMapping("api/firm/{firm_id}/report/route/imeis/from/{from}/to/{to}/{hfrom}/{mfrom}/{hto}/{mto}/export/{export_id}")
@@ -1073,7 +1105,8 @@ public class ReportController {
             }
         }
 
-        return reportService.routeExport2(results, Arrays.asList(imeis), vehicles, export, dateFromS, dateToS);
+        String firmName = vehicles.stream().filter(vv -> vv.getFirm() != null).map(vv -> vv.getFirm().getName()).findFirst().orElse("");
+        return reportService.routeExport2(results, Arrays.asList(imeis), vehicles, export, dateFromS, dateToS, firmName);
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1209,7 +1242,14 @@ public class ReportController {
         try {
             List<Idle> idleList = izvestajOStajanju2(Arrays.asList(imeis), dateFromS, dateToS, hfrom, mfrom, hto, mto, min, minIdle, isIdle);
 
-            return reportService.standingExport(idleList, eid, dateFromS, dateToS, min, minIdle, isIdle);
+            String firmName = "";
+            try {
+                if (imeis.length > 0) {
+                    Vehicle fv = vehicleService.findByImei(imeis[0]);
+                    if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
+                }
+            } catch (Exception ignore) {}
+            return reportService.standingExport(idleList, eid, dateFromS, dateToS, min, minIdle, isIdle, firmName);
         }catch (Exception e) {
             throw e;
         }
@@ -1255,7 +1295,8 @@ public class ReportController {
         } else {
             res = getGs100OGreen(imei, dateFromS, dateToS, hfrom, mfrom, hto, mto);
         }
-        return reportService.greenExport(res, imei, v, eid, dateFromS, dateToS);
+        String firmName = (v != null && v.getFirm() != null) ? v.getFirm().getName() : "";
+        return reportService.greenExport(res, imei, v, eid, dateFromS, dateToS, firmName);
     }
 
     ////////////////////////////////////////////////////////TEMPERATURE//////////////////////////////////////////////////////////////////////
@@ -2667,7 +2708,12 @@ public class ReportController {
         for (Integer integer : routeIds) {
             wholeList.addAll(getRuticeReportic(integer, imei, dateFromS, dateToS).getData());
         }
-        return reportService.exportRouteIskiakanje(wholeList, eid, dateFromS, dateToS);
+        String firmName = "";
+        try {
+            Vehicle fv = vehicleService.findByImei(imei);
+            if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
+        } catch (Exception ignore) {}
+        return reportService.exportRouteIskiakanje(wholeList, eid, dateFromS, dateToS, firmName);
     }
 
     private double najblizaTacka(double lat, double lng, ArrayList<LatLng> latLngList) {
