@@ -452,7 +452,7 @@ public class UserReportService {
                 log.error("Neuspesan email za notifikaciju korisniku " + optionalUser.get().getName() + " sa emailom " +
                         optionalUser.get().getEmail() + " greska: " + e.getMessage());
                 automaticNotificationLoggerService.saveFailedNotificationLog(
-                    singleNotification.getUserId(), 
+                    singleNotification.getFirmId(), 
                     optionalUser.get().getName(), 
                     NotificationType.MAIL, 
                     optionalUser.get().getEmail(), 
@@ -477,7 +477,7 @@ public class UserReportService {
                 sendSms(text, optionalUser.get().getPhone().trim());
                 automaticNotificationLoggerService.saveSuccessNotificationLog(singleNotification.getFirmId(), optionalUser.get().getName(), NotificationType.SMS, optionalUser.get().getPhone().trim(), notification.getName());
             } catch (Exception e) {
-                automaticNotificationLoggerService.saveFailedNotificationLog(singleNotification.getUserId(), optionalUser.get().getName(), NotificationType.SMS, optionalUser.get().getPhone().trim(), notification.getName(), e.getMessage());
+                automaticNotificationLoggerService.saveFailedNotificationLog(singleNotification.getFirmId(), optionalUser.get().getName(), NotificationType.SMS, optionalUser.get().getPhone().trim(), notification.getName(), e.getMessage());
                 System.out.println("neuspesan sms " + e.getMessage());
 
             }

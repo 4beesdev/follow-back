@@ -30,6 +30,9 @@ public class AutomaticNotificationLogger {
     private String subject;
 
     private String userName;
+
+    private String email;
+
     @Enumerated(EnumType.STRING)
     private NotificationType notificationType;
     @Column(columnDefinition = "TEXT")

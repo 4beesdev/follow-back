@@ -22,7 +22,8 @@ public class AutomaticNotificationLoggerService {
     //Sacuvaj successfully notification log
     public void saveSuccessNotificationLog(int firmId, String userName, NotificationType notificationType, String phoneNumber, String subject) {
         AutomaticNotificationLogger log = AutomaticNotificationLogger.builder()
-                .phoneNumber(phoneNumber)
+                .phoneNumber(notificationType == NotificationType.SMS ? phoneNumber : null)
+                .email(notificationType == NotificationType.MAIL ? phoneNumber : null)
                 .time(LocalDateTime.now())
                 .notificationType(notificationType)
                 .subject(subject)
@@ -36,11 +37,11 @@ public class AutomaticNotificationLoggerService {
     private void saveLog(AutomaticNotificationLogger log) {
         automaticNotificationLoggerRepository.save(log);
     }
-    //Sacuvaj fail notification log
 
     public void saveFailedNotificationLog(int firmId, String userName, NotificationType notificationType, String phoneNumber, String subject, String errorMessage) {
         AutomaticNotificationLogger log = AutomaticNotificationLogger.builder()
-                .phoneNumber(phoneNumber)
+                .phoneNumber(notificationType == NotificationType.SMS ? phoneNumber : null)
+                .email(notificationType == NotificationType.MAIL ? phoneNumber : null)
                 .time(LocalDateTime.now())
                 .notificationType(notificationType)
                 .subject(subject)
