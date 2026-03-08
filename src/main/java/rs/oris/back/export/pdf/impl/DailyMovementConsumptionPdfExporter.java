@@ -33,6 +33,14 @@ public class DailyMovementConsumptionPdfExporter extends PdfExporter {
         this.fuelMargin=fuelMargin;
     }
 
+    public DailyMovementConsumptionPdfExporter(LocalDateTime from, LocalDateTime to, Integer emptyingMargin, Integer fuelMargin, String firmName) {
+        super(from, to, firmName);
+        this.from=from;
+        this.to=to;
+        this.emptyingMargin=emptyingMargin;
+        this.fuelMargin=fuelMargin;
+    }
+
     @Override
     public <T> byte[] export(List<T> content, Class<T> myclass, String title) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -50,6 +58,9 @@ public class DailyMovementConsumptionPdfExporter extends PdfExporter {
             PdfWriter writer = PdfWriter.getInstance(document, outputStream);
 
             document.open();
+
+            addReportHeader(document);
+
             //Dodaj naslov
             Paragraph titleP = new Paragraph(title);
             titleP.setAlignment(Element.ALIGN_CENTER);

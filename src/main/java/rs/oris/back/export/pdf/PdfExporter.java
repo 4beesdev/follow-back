@@ -10,6 +10,7 @@ import rs.oris.back.export.annotations.*;
 
 import java.awt.*;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -25,10 +26,52 @@ public class PdfExporter {
 
     protected LocalDateTime to;
     protected LocalDateTime from;
+    protected String firmName;
 
     public PdfExporter(LocalDateTime to, LocalDateTime from) {
-        this.to=to;
-        this.from=from;
+        this.to = to;
+        this.from = from;
+        this.firmName = "";
+    }
+
+    public PdfExporter(LocalDateTime to, LocalDateTime from, String firmName) {
+        this.to = to;
+        this.from = from;
+        this.firmName = firmName != null ? firmName : "";
+    }
+
+    protected void addReportHeader(Document document) throws DocumentException {
+        try {
+            InputStream logoStream = getClass().getResourceAsStream("/images/oris-logo.png");
+            if (logoStream != null) {
+                ByteArrayOutputStream logoBuf = new ByteArrayOutputStream();
+                byte[] buf = new byte[4096];
+                int n;
+                while ((n = logoStream.read(buf)) != -1) logoBuf.write(buf, 0, n);
+                logoStream.close();
+                com.lowagie.text.Image logo = com.lowagie.text.Image.getInstance(logoBuf.toByteArray());
+                logo.scaleToFit(140, 44);
+                logo.setAlignment(Element.ALIGN_LEFT);
+                document.add(logo);
+                document.add(new Paragraph("\n"));
+            }
+        } catch (Exception ignored) {}
+
+        if (firmName != null && !firmName.isEmpty()) {
+            Font firmFont = new Font(Font.HELVETICA, 10, Font.BOLD, Color.DARK_GRAY);
+            Paragraph firmP = new Paragraph("Kompanija: " + firmName, firmFont);
+            firmP.setAlignment(Element.ALIGN_LEFT);
+            document.add(firmP);
+        }
+
+        Font metaFont = new Font(Font.HELVETICA, 8, Font.NORMAL, Color.GRAY);
+        String generatedAt = LocalDateTime.now(ZoneId.of("Europe/Belgrade"))
+                .format(DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+        Paragraph genP = new Paragraph("Generisano: " + generatedAt, metaFont);
+        genP.setAlignment(Element.ALIGN_LEFT);
+        document.add(genP);
+
+        document.add(new Paragraph("\n"));
     }
 
     public <T>  byte[] export(List<T> content, Class<T> myclass,String title){
@@ -43,6 +86,8 @@ public class PdfExporter {
             PdfWriter writer = PdfWriter.getInstance(document, outputStream);
 
             document.open();
+
+            addReportHeader(document);
 
             //Dodaj naslov
             Paragraph titleP = new Paragraph(title);

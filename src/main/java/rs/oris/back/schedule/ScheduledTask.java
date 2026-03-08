@@ -593,7 +593,8 @@ public class ScheduledTask {
                         userReport.getEmptyingMargin());
 
                 if (userReport.getXlsxpdf() == 2) {
-                    PdfExporter pdfExporter = new MonthlyReportPdfExporter(from, to);
+                    String fn = userReport.getFirm() != null ? userReport.getFirm().getName() : "";
+                    PdfExporter pdfExporter = new MonthlyReportPdfExporter(from, to, fn);
                     file = pdfExporter.export(monthFuelReport, MonthlyFuelConsumptionReport.class, "Mesecni izvestaj potrosnje goriva");
                 } else {
                     XlsExporter xlsExporter = new MontlyXlsExporter(from, to);

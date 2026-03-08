@@ -32,6 +32,12 @@ public class DriverVehicleRelationsReportPdfExporter extends PdfExporter {
         this.from=from;
     }
 
+    public DriverVehicleRelationsReportPdfExporter(LocalDateTime from, LocalDateTime to, String firmName) {
+        super(to, from, firmName);
+        this.to=to;
+        this.from=from;
+    }
+
 
 
     @Override
@@ -52,6 +58,9 @@ public class DriverVehicleRelationsReportPdfExporter extends PdfExporter {
             PdfWriter writer = PdfWriter.getInstance(document, outputStream);
 
             document.open();
+
+            addReportHeader(document);
+
             //Dodaj naslov
             Paragraph titleP = new Paragraph(title);
             titleP.setAlignment(Element.ALIGN_CENTER);

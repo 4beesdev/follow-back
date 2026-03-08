@@ -24,7 +24,11 @@ import rs.oris.back.export.pdf.PdfExporter;
 import rs.oris.back.export.pdf.impl.*;
 import rs.oris.back.export.xml.XlsExporter;
 import rs.oris.back.export.xml.impl.*;
+import rs.oris.back.domain.Driver;
+import rs.oris.back.domain.Vehicle;
+import rs.oris.back.repository.DriverRepository;
 import rs.oris.back.service.ReportService;
+import rs.oris.back.service.VehicleService;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -39,6 +43,32 @@ import java.util.Optional;
 public class ReportsController {
 
     private final ReportService reportsService;
+    private final VehicleService vehicleService;
+    private final DriverRepository driverRepository;
+
+    private String getFirmName(List<String> imeis) {
+        try {
+            List<Vehicle> vehicles = vehicleService.findAllByImeiIn(imeis);
+            return vehicles.stream()
+                    .filter(v -> v.getFirm() != null)
+                    .map(v -> v.getFirm().getName())
+                    .findFirst().orElse("");
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private String getFirmNameFromDrivers(List<Integer> driverIds) {
+        try {
+            List<Driver> drivers = driverRepository.findAllByDriverIdIn(driverIds);
+            return drivers.stream()
+                    .filter(d -> d.getFirm() != null)
+                    .map(d -> d.getFirm().getName())
+                    .findFirst().orElse("");
+        } catch (Exception e) {
+            return "";
+        }
+    }
 
 
     //Endpoint koji obradjuje zahtev za izvestaj o relacijama vozaca po vozilu za zadati period i za data vozila
@@ -161,7 +191,7 @@ public class ReportsController {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new PdfExporter(to, from);
+        PdfExporter pdfExporter = new PdfExporter(to, from, getFirmNameFromDrivers(drivers));
         byte[] pdf = pdfExporter.export(driverVehicleRelationReport.getReports(), DriverRelationReportData.class, "Izveštaj o relacijama vozača");
 
         ByteArrayResource resource = new ByteArrayResource(pdf);
@@ -204,7 +234,7 @@ public class ReportsController {
 
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new DriverVehicleRelationsReportPdfExporter(from, to);
+        PdfExporter pdfExporter = new DriverVehicleRelationsReportPdfExporter(from, to, getFirmName(imeis));
         byte[] pdf = pdfExporter.export(driverVehicleRelationReport.getReports(), DriverVehicleRelationReportData.class, "Izveštaj o relacijama vozaca");
 
         ByteArrayResource resource = new ByteArrayResource(pdf);
@@ -358,7 +388,7 @@ public class ReportsController {
 
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new DriverRelationsFuelReportPdfExporter(to, from);
+        PdfExporter pdfExporter = new DriverRelationsFuelReportPdfExporter(to, from, getFirmName(imeis));
         byte[] pdf = pdfExporter.export(driverRelationsFuelReport, DriverRelationsFuelReport.class, "Izvestaj o relacijama vozila - gorivo");
         ByteArrayResource resource = new ByteArrayResource(pdf);
 
@@ -479,7 +509,7 @@ public class ReportsController {
         log.info(LocalDateTime.now() + " - Generisanje PDF izvestaja o aktivaciji senzora za period od: " + from + " do: " + to + " za vozila: " + imeis);
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new SensorsReportPdfExporter(to, from);
+        PdfExporter pdfExporter = new SensorsReportPdfExporter(to, from, getFirmName(imeis));
         byte[] pdf = pdfExporter.export(sensorActivationReport, SensorActivationReport.class, "Izveštaj o aktivaciji senzora");
         ByteArrayResource resource = new ByteArrayResource(pdf);
 
@@ -563,7 +593,7 @@ public class ReportsController {
 
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new MonthlyReportPdfExporter(from, to);
+        PdfExporter pdfExporter = new MonthlyReportPdfExporter(from, to, getFirmName(imeis));
         byte[] pdf = pdfExporter.export(monthFuelReport, MonthlyFuelConsumptionReport.class, "Mesecni izvestaj potrosnje goriva");
 
         ByteArrayResource resource = new ByteArrayResource(pdf);
@@ -699,7 +729,7 @@ public class ReportsController {
 ////        //---------------------------------
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new EffectiveWokringHoursPdfExporter(to, from);
+        PdfExporter pdfExporter = new EffectiveWokringHoursPdfExporter(to, from, getFirmName(imeis));
 
         byte[] pdf = pdfExporter.export(effectiveWorkingHoursReportData.getReports(), EffectiveWorkingHoursReportData.class, "Izvestaj efektivnih radnih sati");
 
@@ -874,7 +904,7 @@ public class ReportsController {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 //
 //        //Kreiraj xls exporter i obradi podatke
-        PdfExporter pdfExporter = new DailyMovementConsumptionPdfExporter(from, to,emptyingMargin,fuelMargin);
+        PdfExporter pdfExporter = new DailyMovementConsumptionPdfExporter(from, to, emptyingMargin, fuelMargin, getFirmName(imeis));
         byte[] pdf = pdfExporter.export(dailyMovementConsumptionReport, DailyMovementConsumptionReport.class, "Dnevni izvešaj o kretanju i potrošnji goriva");
         ByteArrayResource resource = new ByteArrayResource(pdf);
 
