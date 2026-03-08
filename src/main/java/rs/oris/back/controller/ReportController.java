@@ -971,7 +971,11 @@ public class ReportController {
         }
 
 
-        return reportService.speedExport2(allData, Arrays.asList(imeis), vehicles, export, dateFromS, dateToS, peakSelected, max);
+        String firmName = vehicles.stream()
+                .filter(v -> v.getFirm() != null)
+                .map(v -> v.getFirm().getName())
+                .findFirst().orElse("");
+        return reportService.speedExport2(allData, Arrays.asList(imeis), vehicles, export, dateFromS, dateToS, peakSelected, max, firmName);
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

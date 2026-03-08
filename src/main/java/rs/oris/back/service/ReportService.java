@@ -6,6 +6,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.time.*;
@@ -26,7 +27,9 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.util.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFDrawing;
 import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -2016,7 +2019,7 @@ public class ReportService {
 
 
 
-    public byte[] speedExport2(List<DTOSpeed> list, List<String> imeis, List<Vehicle> vehicles, int export, String dateF, String dateT, boolean peakSelected, int max) throws Exception {
+    public byte[] speedExport2(List<DTOSpeed> list, List<String> imeis, List<Vehicle> vehicles, int export, String dateF, String dateT, boolean peakSelected, int max, String firmName) throws Exception {
         Map<String, Vehicle> byImei = vehicles.stream()
                 .collect(Collectors.toMap(Vehicle::getImei, v -> v, (a, b) -> a));
 
@@ -2119,24 +2122,74 @@ public class ReportService {
         avgStyleAlt.cloneStyleFrom(bodyCenterAlt);
         avgStyleAlt.setDataFormat(ch.createDataFormat().getFormat("0.00"));
 
-        // ===== GORNJI DEO (naslov + meta) =====
+        // ===== LOGO + HEADER =====
         int rIdx = 0;
 
-        // Naslov A1:I1
+        // Logo (rows 0-2, columns 0-1)
+        try {
+            InputStream logoStream = getClass().getResourceAsStream("/images/oris-logo.png");
+            if (logoStream != null) {
+                byte[] logoBytes = IOUtils.toByteArray(logoStream);
+                logoStream.close();
+                int pictureIdx = wb.addPicture(logoBytes, Workbook.PICTURE_TYPE_PNG);
+                XSSFDrawing drawing = sh.createDrawingPatriarch();
+                XSSFClientAnchor anchor = new XSSFClientAnchor(0, 0, 0, 0, 0, 0, 2, 3);
+                anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+                drawing.createPicture(anchor, pictureIdx);
+            }
+        } catch (Exception ignored) {}
+
+        // Reserve rows for logo
+        for (int i = 0; i < 3; i++) {
+            Row lr = sh.createRow(rIdx++);
+            lr.setHeightInPoints(20);
+        }
+
+        // Prazan red
+        rIdx++;
+
+        // Naslov
         Row r = sh.createRow(rIdx++);
-        r.setHeightInPoints(24);
+        r.setHeightInPoints(28);
         r.createCell(0).setCellValue("Izveštaj o prekoračenju brzine");
         r.getCell(0).setCellStyle(titleStyle);
-        sh.addMergedRegion(new CellRangeAddress(0, 0, 0, 8));
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 0, 7));
 
-        // prazan red zbog vizuelnog razmaka
+        // Prazan red
         rIdx++;
+
+        // Meta: Kompanija
+        XSSFFont metaBoldFont = wb.createFont();
+        metaBoldFont.setBold(true);
+        metaBoldFont.setFontHeightInPoints((short) 10);
+        XSSFCellStyle metaLabelBold = wb.createCellStyle();
+        metaLabelBold.cloneStyleFrom(metaLabel);
+        metaLabelBold.setFont(metaBoldFont);
+
+        r = sh.createRow(rIdx++);
+        r.setHeightInPoints(18);
+        r.createCell(0).setCellValue("Kompanija:");
+        r.getCell(0).setCellStyle(metaLabelBold);
+        r.createCell(1).setCellValue(firmName != null ? firmName : "");
+        r.getCell(1).setCellStyle(metaValue);
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 3));
+
+        // Meta: Generisano
+        r = sh.createRow(rIdx++);
+        r.setHeightInPoints(18);
+        r.createCell(0).setCellValue("Generisano:");
+        r.getCell(0).setCellStyle(metaLabelBold);
+        String generatedAt = java.time.LocalDateTime.now(java.time.ZoneId.of("Europe/Belgrade"))
+                .format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+        r.createCell(1).setCellValue(generatedAt);
+        r.getCell(1).setCellStyle(metaValue);
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 3));
 
         // Meta: Prekoračenje brzine
         r = sh.createRow(rIdx++);
         r.setHeightInPoints(18);
         r.createCell(0).setCellValue("Prekoračenje brzine:");
-        r.getCell(0).setCellStyle(metaLabel);
+        r.getCell(0).setCellStyle(metaLabelBold);
         r.createCell(1).setCellValue(max + " (Km/h)");
         r.getCell(1).setCellStyle(metaValue);
 
@@ -2144,11 +2197,12 @@ public class ReportService {
         r = sh.createRow(rIdx++);
         r.setHeightInPoints(18);
         r.createCell(0).setCellValue("Datum/Vreme:");
-        r.getCell(0).setCellStyle(metaLabel);
+        r.getCell(0).setCellStyle(metaLabelBold);
         r.createCell(1).setCellValue("Od: " + dateF + "  Do: " + dateT);
         r.getCell(1).setCellStyle(metaValue);
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 4));
 
-        // razmak
+        // Prazan red
         rIdx++;
 
         // ===== HEADER TABELE (plavi red) =====
