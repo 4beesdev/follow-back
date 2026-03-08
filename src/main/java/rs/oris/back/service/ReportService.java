@@ -3675,203 +3675,245 @@ public class ReportService {
      * @return
      * @throws Exception
      */
-    public byte[] geozoneExcport(List<VGR> vgrList, int eid, long from, long timeTo) throws Exception {
-        XSSFWorkbook workbook = new XSSFWorkbook();
-        XSSFSheet sheet = workbook.createSheet("Geozone");
+    public byte[] geozoneExcport(List<VGR> vgrList, int eid, long from, long timeTo, String firmName) throws Exception {
+        XSSFWorkbook wb = new XSSFWorkbook();
+        XSSFSheet sh = wb.createSheet("Geozone");
 
         Collections.sort(vgrList, new Comparator<VGR>() {
             @Override
             public int compare(VGR o1, VGR o2) {
-                if (o1.getEntryTime() < o2.getEntryTime())
-                    return -1;
+                if (o1.getEntryTime() < o2.getEntryTime()) return -1;
                 return 1;
             }
         });
 
-        XSSFCellStyle upperStyle = workbook.createCellStyle();
-        upperStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(165, 211, 242)));
-        //style1.setFillPattern(CellStyle.SOLID_FOREGROUND);
-        upperStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
-        upperStyle.setBorderBottom(BorderStyle.MEDIUM);
+        // ===== FONTS =====
+        XSSFFont titleFont = wb.createFont();
+        titleFont.setBold(true);
+        titleFont.setFontHeightInPoints((short) 14);
 
-        XSSFFont font2 = workbook.createFont();
-        font2.setFontHeightInPoints((short) 7);
-        font2.setBold(true);
-        upperStyle.setFont(font2);
-        upperStyle.setAlignment(HorizontalAlignment.CENTER);
+        XSSFFont headerFont = wb.createFont();
+        headerFont.setBold(true);
+        headerFont.setFontHeightInPoints((short) 8);
+        headerFont.setColor(IndexedColors.WHITE.getIndex());
 
-        XSSFCellStyle textStyle = workbook.createCellStyle();
-        textStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(222, 222, 222)));
-        textStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        XSSFFont bodyFont = wb.createFont();
+        bodyFont.setFontHeightInPoints((short) 8);
 
-        //        XSSFCellStyle dateCellStyle2 = workbook.createCellStyle();
-        //        dateCellStyle2.setFillForegroundColor(new XSSFColor(new java.awt.Color(220, 223, 227)));
-        //        //style1.setFillPattern(CellStyle.SOLID_FOREGROUND);
-        //        CreationHelper createHelper = workbook.getCreationHelper();
-        //        dateCellStyle2.setDataFormat(
-        //                createHelper.createDataFormat().getFormat("dd/mm/yyyy HH:mm:ss"));
+        XSSFFont metaBoldFont = wb.createFont();
+        metaBoldFont.setBold(true);
+        metaBoldFont.setFontHeightInPoints((short) 9);
+
+        // ===== STYLES =====
+        XSSFCellStyle titleStyle = wb.createCellStyle();
+        titleStyle.setFont(titleFont);
+        titleStyle.setAlignment(HorizontalAlignment.LEFT);
+        titleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        titleStyle.setBorderBottom(BorderStyle.MEDIUM);
+
+        XSSFCellStyle metaLabel = wb.createCellStyle();
+        metaLabel.setFont(metaBoldFont);
+        metaLabel.setAlignment(HorizontalAlignment.LEFT);
+        metaLabel.setVerticalAlignment(VerticalAlignment.CENTER);
+        metaLabel.setFillForegroundColor(rgb(220, 223, 227));
+        metaLabel.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        XSSFCellStyle metaValue = wb.createCellStyle();
+        metaValue.setFont(bodyFont);
+        metaValue.setAlignment(HorizontalAlignment.LEFT);
+        metaValue.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        XSSFCellStyle header = wb.createCellStyle();
+        header.setFont(headerFont);
+        header.setAlignment(HorizontalAlignment.CENTER);
+        header.setVerticalAlignment(VerticalAlignment.CENTER);
+        header.setWrapText(true);
+        header.setFillForegroundColor(rgb(44, 115, 178));
+        header.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        header.setBorderBottom(BorderStyle.THIN);
+        header.setBorderTop(BorderStyle.THIN);
+        header.setBorderLeft(BorderStyle.THIN);
+        header.setBorderRight(BorderStyle.THIN);
+
+        XSSFCellStyle bodyLeft = wb.createCellStyle();
+        bodyLeft.setFont(bodyFont);
+        bodyLeft.setAlignment(HorizontalAlignment.LEFT);
+        bodyLeft.setVerticalAlignment(VerticalAlignment.CENTER);
+        bodyLeft.setBorderBottom(BorderStyle.THIN);
+        bodyLeft.setBorderTop(BorderStyle.THIN);
+        bodyLeft.setBorderLeft(BorderStyle.THIN);
+        bodyLeft.setBorderRight(BorderStyle.THIN);
+
+        XSSFCellStyle bodyCenter = wb.createCellStyle();
+        bodyCenter.cloneStyleFrom(bodyLeft);
+        bodyCenter.setAlignment(HorizontalAlignment.CENTER);
+
+        XSSFCellStyle bodyLeftAlt = wb.createCellStyle();
+        bodyLeftAlt.cloneStyleFrom(bodyLeft);
+        bodyLeftAlt.setFillForegroundColor(rgb(241, 245, 249));
+        bodyLeftAlt.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        XSSFCellStyle bodyCenterAlt = wb.createCellStyle();
+        bodyCenterAlt.cloneStyleFrom(bodyCenter);
+        bodyCenterAlt.setFillForegroundColor(rgb(241, 245, 249));
+        bodyCenterAlt.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy");
         df.setTimeZone(TimeZone.getTimeZone("Europe/Belgrade"));
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+        sdf.setTimeZone(TimeZone.getTimeZone("Europe/Belgrade"));
 
-        int rowCount = 0;
-        int cellCount = 0;
-        //ono pocetak
-        Row row = sheet.createRow(rowCount++);
-        sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, 4));
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Izveštaj o geozonama");
-        row = sheet.createRow(++rowCount);
-
-        cellCount = 0;
-        row = sheet.createRow(rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("OD:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(df.format(new Date(from)));
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("DO:");
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(textStyle);
-        row.getCell(cellCount++).setCellValue(df.format(new Date(timeTo)));
-
-        cellCount = 0;
-        row = sheet.createRow(++rowCount);
-        row = sheet.createRow(++rowCount);
-        //ono kraj
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Reg.");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Proiz./Mod.");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Naziv geozone");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Vreme mirovanja");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Vreme stajanja");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Pređeni put");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Vreme ulaska");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Vreme izlaska");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Pocetno stanje goriva");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Krajnje stanje goriva");
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Razlika goriva");
-
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Vozac");
-
-        for (VGR dtoRotue : vgrList) {
-            row = sheet.createRow(++rowCount);
-            cellCount = 0;
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(dtoRotue.getVehicle().getRegistration());
-
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(dtoRotue.getVehicle().getManufacturer() + "(" + dtoRotue.getVehicle().getModel() + ")");
-
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(dtoRotue.getGeozone().getName());
-
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(formatSeconds((int) dtoRotue.getMirovanje() / 1000));
-
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(formatSeconds((int) dtoRotue.getStajanje() / 1000));
-
-            //            row.createCell(cellCount);
-            //            row.getCell(cellCount++).setCellValue(formatSeconds((int)  dtoRotue.getStoppedTime()/1000));
-
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(String.format("%.2f", dtoRotue.getMillage()));
-
-            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-            sdf.setTimeZone(TimeZone.getTimeZone("Europe/Belgrade"));
-
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(sdf.format(dtoRotue.getEntryTime()));
-
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(sdf.format(dtoRotue.getExitTime()));
-
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(dtoRotue.getFuelStart());
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(dtoRotue.getFuelEnd());
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(dtoRotue.getFuelSpend());
-
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(dtoRotue.getDriverName());
-
-        }
-        for (int i = 0; i < 34; i++) {
-            try {
-                sheet.autoSizeColumn(i);
-            } catch (Exception e) {
+        // ===== LOGO =====
+        int rIdx = 0;
+        try {
+            InputStream logoStream = getClass().getResourceAsStream("/images/oris-logo.png");
+            if (logoStream != null) {
+                byte[] logoBytes = IOUtils.toByteArray(logoStream);
+                logoStream.close();
+                int pictureIdx = wb.addPicture(logoBytes, Workbook.PICTURE_TYPE_PNG);
+                XSSFDrawing drawing = sh.createDrawingPatriarch();
+                XSSFClientAnchor anchor = new XSSFClientAnchor(0, 0, 0, 0, 0, 0, 2, 3);
+                anchor.setAnchorType(ClientAnchor.AnchorType.MOVE_AND_RESIZE);
+                drawing.createPicture(anchor, pictureIdx);
             }
+        } catch (Exception ignored) {}
+
+        for (int i = 0; i < 3; i++) {
+            Row lr = sh.createRow(rIdx++);
+            lr.setHeightInPoints(20);
+        }
+        rIdx++;
+
+        // ===== NASLOV =====
+        Row r = sh.createRow(rIdx++);
+        r.setHeightInPoints(28);
+        r.createCell(0).setCellValue("Izveštaj o geozonama");
+        r.getCell(0).setCellStyle(titleStyle);
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 0, 7));
+        rIdx++;
+
+        // ===== META =====
+        r = sh.createRow(rIdx++);
+        r.setHeightInPoints(18);
+        r.createCell(0).setCellValue("Kompanija:");
+        r.getCell(0).setCellStyle(metaLabel);
+        r.createCell(1).setCellValue(firmName != null ? firmName : "");
+        r.getCell(1).setCellStyle(metaValue);
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 3));
+
+        r = sh.createRow(rIdx++);
+        r.setHeightInPoints(18);
+        r.createCell(0).setCellValue("Generisano:");
+        r.getCell(0).setCellStyle(metaLabel);
+        String generatedAt = java.time.LocalDateTime.now(java.time.ZoneId.of("Europe/Belgrade"))
+                .format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm"));
+        r.createCell(1).setCellValue(generatedAt);
+        r.getCell(1).setCellStyle(metaValue);
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 3));
+
+        r = sh.createRow(rIdx++);
+        r.setHeightInPoints(18);
+        r.createCell(0).setCellValue("Period:");
+        r.getCell(0).setCellStyle(metaLabel);
+        r.createCell(1).setCellValue("Od: " + df.format(new Date(from)) + "  Do: " + df.format(new Date(timeTo)));
+        r.getCell(1).setCellStyle(metaValue);
+        sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 4));
+
+        rIdx++;
+
+        // ===== HEADER TABELE =====
+        String[] cols = {
+                "Registracija", "Proizvođač/\nModel", "Naziv\ngeozone",
+                "Vreme\nmirovanja", "Vreme\nstajanja", "Pređeni\nput",
+                "Vreme ulaska", "Vreme izlaska",
+                "Poč. gorivo", "Kraj. gorivo", "Razlika\ngoriva", "Vozač"
+        };
+
+        Row hr = sh.createRow(rIdx++);
+        hr.setHeightInPoints(30);
+        for (int c = 0; c < cols.length; c++) {
+            hr.createCell(c).setCellValue(cols[c]);
+            hr.getCell(c).setCellStyle(header);
         }
 
-        //        String s = "";
-        //        Date d = new Date();
-        //        int x = d.getSeconds();
-        //        int x2 = d.getMinutes();
-        //        s = "excel" + x + "" + x2 + ".xlsx";
-        //
-        //
-        //        try (FileOutputStream outputStream = new FileOutputStream(s)) {
-        //            workbook.write(outputStream);
-        //        } catch (Exception e) {
-        //            e.printStackTrace();
-        //        }
+        // ===== DATA =====
+        int dataRowIdx = 0;
+        for (VGR item : vgrList) {
+            boolean alt = dataRowIdx % 2 == 1;
+            XSSFCellStyle left = alt ? bodyLeftAlt : bodyLeft;
+            XSSFCellStyle center = alt ? bodyCenterAlt : bodyCenter;
+
+            Row row = sh.createRow(rIdx++);
+            row.setHeightInPoints(18);
+            int c = 0;
+
+            row.createCell(c).setCellValue(item.getVehicle().getRegistration());
+            row.getCell(c++).setCellStyle(left);
+
+            row.createCell(c).setCellValue(item.getVehicle().getManufacturer() + " (" + item.getVehicle().getModel() + ")");
+            row.getCell(c++).setCellStyle(left);
+
+            row.createCell(c).setCellValue(item.getGeozone().getName());
+            row.getCell(c++).setCellStyle(left);
+
+            row.createCell(c).setCellValue(formatSeconds((int) item.getMirovanje() / 1000));
+            row.getCell(c++).setCellStyle(center);
+
+            row.createCell(c).setCellValue(formatSeconds((int) item.getStajanje() / 1000));
+            row.getCell(c++).setCellStyle(center);
+
+            row.createCell(c).setCellValue(String.format("%.2f", item.getMillage()));
+            row.getCell(c++).setCellStyle(center);
+
+            row.createCell(c).setCellValue(sdf.format(item.getEntryTime()));
+            row.getCell(c++).setCellStyle(center);
+
+            row.createCell(c).setCellValue(sdf.format(item.getExitTime()));
+            row.getCell(c++).setCellStyle(center);
+
+            row.createCell(c).setCellValue(item.getFuelStart());
+            row.getCell(c++).setCellStyle(center);
+
+            row.createCell(c).setCellValue(item.getFuelEnd());
+            row.getCell(c++).setCellStyle(center);
+
+            row.createCell(c).setCellValue(item.getFuelSpend());
+            row.getCell(c++).setCellStyle(center);
+
+            row.createCell(c).setCellValue(item.getDriverName());
+            row.getCell(c++).setCellStyle(left);
+
+            dataRowIdx++;
+        }
+
+        // ===== COLUMN WIDTHS (characters * 256) =====
+        sh.setColumnWidth(0, 12 * 256);  // Registracija
+        sh.setColumnWidth(1, 14 * 256);  // Proizvođač/Model
+        sh.setColumnWidth(2, 14 * 256);  // Naziv geozone
+        sh.setColumnWidth(3, 10 * 256);  // Vreme mirovanja
+        sh.setColumnWidth(4, 10 * 256);  // Vreme stajanja
+        sh.setColumnWidth(5, 9 * 256);   // Pređeni put
+        sh.setColumnWidth(6, 14 * 256);  // Vreme ulaska
+        sh.setColumnWidth(7, 14 * 256);  // Vreme izlaska
+        sh.setColumnWidth(8, 9 * 256);   // Poč. gorivo
+        sh.setColumnWidth(9, 9 * 256);   // Kraj. gorivo
+        sh.setColumnWidth(10, 9 * 256);  // Razlika goriva
+        sh.setColumnWidth(11, 14 * 256); // Vozač
+
         if (eid == 2) {
-            return getPdf(workbook, true);
+            return getPdf(wb, true);
         }
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
-            workbook.write(bos);
+            wb.write(bos);
         } finally {
             bos.close();
         }
 
         byte[] bytes = bos.toByteArray();
         byte[] encoded = Base64.getEncoder().encode(bytes);
-
         return encoded;
-
     }
 
     /**

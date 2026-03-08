@@ -2535,8 +2535,12 @@ public class ReportController {
         for (Integer integer : ids) {
             vgrList.addAll(getGeozoneReportInternal(firmId, integer, imei, dateFromS, dateToS).getData());
         }
-        System.out.println(vgrList.size());
-        return reportService.geozoneExcport(vgrList, eid, dateFromS, dateToS);
+        String firmName = "";
+        try {
+            Vehicle v = vehicleService.findByImei(imei);
+            if (v != null && v.getFirm() != null) firmName = v.getFirm().getName();
+        } catch (Exception ignore) {}
+        return reportService.geozoneExcport(vgrList, eid, dateFromS, dateToS, firmName);
     }
 
     //RUTICE
