@@ -17,6 +17,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -73,6 +75,8 @@ public class ReportController {
     @Autowired
     private VehicleRepository vehicleRepository;
     ;
+    @Autowired
+    private UserService userService;
 
     @Autowired
     private KilometersAdministrationService kilometersAdministrationService;
@@ -82,6 +86,22 @@ public class ReportController {
     private RestTemplate restTemplate;
 
     private static final Logger log = LoggerFactory.getLogger(ReportController.class);
+
+    User getCurrentUser() throws Exception {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null || "anonymousUser".equals(authentication.getName())) {
+            throw new ForbiddenException("Bad token");
+        }
+        return userService.findByUsername(authentication.getName());
+    }
+
+    List<String> filterAuthorizedImeis(int firmId, List<String> imeis) throws Exception {
+        return vehicleService.filterAccessibleImeis(getCurrentUser(), firmId, imeis);
+    }
+
+    List<Vehicle> getAuthorizedVehicles(int firmId, List<String> imeis) throws Exception {
+        return vehicleService.findAllByImeiIn(filterAuthorizedImeis(firmId, imeis));
+    }
 
     @PostMapping("/api/load/days")
     private String loadDays(@RequestBody DaysDTO daysDTO) throws Exception {
@@ -200,9 +220,9 @@ public class ReportController {
     }
 
     @PostMapping("api/firm/{firm_id}/report/ipp/imeis/from/{from}/to/{to}/{hfrom}/{mfrom}/{hto}/{mto}")
-    private List<Ipp> izvestajOPredjenomPutu2(@RequestBody List<String> imeis, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto) throws Exception {
+    private List<Ipp> izvestajOPredjenomPutu2(@RequestBody List<String> imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto) throws Exception {
 
-        List<Vehicle> vehicles = vehicleService.findAllByImeiIn(imeis);
+        List<Vehicle> vehicles = getAuthorizedVehicles(firmId, imeis);
 
         for (Vehicle v : vehicles) {
             if (v.getDeviceType() == null) {
@@ -275,31 +295,32 @@ public class ReportController {
      */
     public byte[] izvestajOPredjenomPutuExport(@PathVariable("IMEI") String imei, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS,
             @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto,
-            @PathVariable("export_id") int export, @RequestBody String[] imeis) throws Exception {
+            @PathVariable("firm_id") int firmId, @PathVariable("export_id") int export, @RequestBody String[] imeis) throws Exception {
+        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
         log.info("####################################");
-        log.info(LocalDateTime.now() + " - Starting ipp export for imeis: " + Arrays.toString(imeis));
+        log.info(LocalDateTime.now() + " - Starting ipp export for imeis: " + authorizedImeis);
         ArrayList<Ipp> ippList = new ArrayList<>();
-        for (int i = 0; i < imeis.length; i++) {
-            Vehicle v = vehicleService.findByImei(imeis[i]);
+        for (String authorizedImei : authorizedImeis) {
+            Vehicle v = vehicleService.findByImei(authorizedImei);
             if (v.getDeviceType() == null) {
                 log.info("####################################");
-                log.info(LocalDateTime.now() + " - Device type not set for imei: " + imeis[i]);
+                log.info(LocalDateTime.now() + " - Device type not set for imei: " + authorizedImei);
                 throw new ForbiddenException("Device type is not set for the vehicle. Please go to vehicle administration and set device type.");
             }
             String res = "";
             if (v.getDeviceType() == 0) {
                 log.info("####################################");
-                log.info(LocalDateTime.now() + " - Fetching Teltonika data for imei: " + imeis[i]);
-                res = getTeltonika(imeis[i], dateFromS, dateToS, hfrom, mfrom, hto, mto);
+                log.info(LocalDateTime.now() + " - Fetching Teltonika data for imei: " + authorizedImei);
+                res = getTeltonika(authorizedImei, dateFromS, dateToS, hfrom, mfrom, hto, mto);
             } else {
                 log.info("####################################");
-                log.info(LocalDateTime.now() + " - Fetching GS100 data for imei: " + imeis[i]);
-                res = getGs100(imeis[i], dateFromS, dateToS, hfrom, mfrom, hto, mto);
+                log.info(LocalDateTime.now() + " - Fetching GS100 data for imei: " + authorizedImei);
+                res = getGs100(authorizedImei, dateFromS, dateToS, hfrom, mfrom, hto, mto);
             }
 
             if (res.length() > 10) {
                 log.info("####################################");
-                log.info(LocalDateTime.now() + " - Processing data for imei: " + imeis[i]);
+                log.info(LocalDateTime.now() + " - Processing data for imei: " + authorizedImei);
                 Gson g = new Gson();
                 Ipp ipp = g.fromJson(res, Ipp.class);
                 ipp.setRegistraiton(v.getRegistration());
@@ -326,7 +347,7 @@ public class ReportController {
         Timestamp tsTo = new Timestamp(to);
 
         log.info("####################################");
-        log.info(LocalDateTime.now() + " - Generating report for imeis: " + Arrays.toString(imeis));
+        log.info(LocalDateTime.now() + " - Generating report for imeis: " + authorizedImeis);
 
         String firmName = "";
         try {
@@ -342,9 +363,9 @@ public class ReportController {
      *
      * @param export =2 vraca pdf, u suprotnom workbook
      */
-    public byte[] izvestajOPredjenomPutuExport2(@PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto, @PathVariable("export_id") int export, @RequestBody List<String> imeis) throws Exception {
+    public byte[] izvestajOPredjenomPutuExport2(@PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto, @PathVariable("export_id") int export, @RequestBody List<String> imeis) throws Exception {
 
-        ArrayList<Ipp> ippList= (ArrayList<Ipp>) izvestajOPredjenomPutu2(imeis, dateFromS, dateToS, hfrom, mfrom, hto, mto);
+        ArrayList<Ipp> ippList= (ArrayList<Ipp>) izvestajOPredjenomPutu2(imeis, firmId, dateFromS, dateToS, hfrom, mfrom, hto, mto);
 
         Date dateTo = new SimpleDateFormat("yyyy-MM-dd").parse(dateToS);
         Date dateFrom = new SimpleDateFormat("yyyy-MM-dd").parse(dateFromS);
@@ -402,8 +423,8 @@ public class ReportController {
 
 
     @PostMapping("api/firm/{firm_id}/report/ippm/imeis/from/{from}/to/{to}")
-    private List<Ippm> izvestajOPredjenomPutuMesecni3(@RequestBody List<String> imeis, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS) throws Exception {
-        List<Vehicle> vehicles = vehicleService.findAllByImeiIn(imeis);
+    private List<Ippm> izvestajOPredjenomPutuMesecni3(@RequestBody List<String> imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS) throws Exception {
+        List<Vehicle> vehicles = getAuthorizedVehicles(firmId, imeis);
 
         for (Vehicle v : vehicles) {
             if (v.getDeviceType() == null) {
@@ -490,10 +511,11 @@ public class ReportController {
      */
     @PostMapping("api/firm/{firm_id}/report/ippm/imei/{IMEI}/from/{from}/to/{to}/export/{export_id}")//done
     public byte[] izvestajOPredjenomPutuMesecniExport(@PathVariable("IMEI") String imei, @PathVariable("from") String dateFromS,
-            @PathVariable("to") String dateToS, @PathVariable("export_id") int export, @RequestBody String[] imeis) throws Exception {
+            @PathVariable("to") String dateToS, @PathVariable("firm_id") int firmId, @PathVariable("export_id") int export, @RequestBody String[] imeis) throws Exception {
+        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
         ArrayList<Ippm> ippmArrayList = new ArrayList<>();
-        for (int i = 0; i < imeis.length; i++) {
-            Vehicle v = vehicleService.findByImei(imeis[i]);
+        for (String authorizedImei : authorizedImeis) {
+            Vehicle v = vehicleService.findByImei(authorizedImei);
             if (v.getDeviceType() == null) {
                 throw new ForbiddenException("Device type is not set for the vehicle. Please go to vehicle administration and set device type.");
             }
@@ -502,9 +524,9 @@ public class ReportController {
             }
             String res = "";
             if (v.getDeviceType() == 0) {
-                res = getTeltonikaMonthly(imeis[i], dateFromS, dateToS);
+                res = getTeltonikaMonthly(authorizedImei, dateFromS, dateToS);
             } else {
-                res = getGs100Monthly(imeis[i], dateFromS, dateToS);
+                res = getGs100Monthly(authorizedImei, dateFromS, dateToS);
             }
             if (res.length() > 5) {
                 Map<Integer, Double> retMap = new Gson().fromJson(
@@ -540,9 +562,9 @@ public class ReportController {
 
 
     @PostMapping("api/firm/{firm_id}/report/ippm/imeis/from/{from}/to/{to}/export/{export_id}")
-    public byte[] izvestajOPredjenomPutuMesecniExport2(@RequestBody List<String> imeis, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("export_id") int export) throws Exception {
+    public byte[] izvestajOPredjenomPutuMesecniExport2(@RequestBody List<String> imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("export_id") int export) throws Exception {
 
-        ArrayList<Ippm> ippmArrayList= (ArrayList<Ippm>) izvestajOPredjenomPutuMesecni3(imeis,dateFromS,dateToS);
+        ArrayList<Ippm> ippmArrayList= (ArrayList<Ippm>) izvestajOPredjenomPutuMesecni3(imeis, firmId, dateFromS, dateToS);
 
 
         Date dateTo = new SimpleDateFormat("yyyy-MM-dd").parse(dateToS);
@@ -622,12 +644,12 @@ public class ReportController {
 
     @PostMapping("api/firm/{firm_id}/report/ippmh/imeis/from/{from}/to/{to}/{hfrom}/{mfrom}/{hto}/{mto}/{hfromsa}/{mfromsa}/{htosa}/{mtosa}/{hfromsu}/{mfromsu}/{htosu}/{mtosu}/working/{working}")
     //working hours 1, not working 0
-    private String izvestajOPredjenomPutuMesecniVRV2(@RequestBody List<String> imeis, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto,
+    private String izvestajOPredjenomPutuMesecniVRV2(@RequestBody List<String> imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto,
                                                      @PathVariable("hfromsa") int hfromsa, @PathVariable("mfromsa") int mfromsa, @PathVariable("htosa") int htosa, @PathVariable("mtosa") int mtosa, @PathVariable("hfromsu") int hfromsu, @PathVariable("mfromsu") int mfromsu, @PathVariable("htosu") int htosu,
                                                      @PathVariable("mtosu") int mtosu, @PathVariable("working") int working) throws Exception {
 
 
-        List<Vehicle> vehicles = vehicleService.findAllByImeiIn(imeis);
+        List<Vehicle> vehicles = getAuthorizedVehicles(firmId, imeis);
 
         List<String> teltonikaImeis = new ArrayList<>();
         List<String> gs100Imeis = new ArrayList<>();
@@ -657,7 +679,7 @@ public class ReportController {
         }
 
         if (!gs100Imeis.isEmpty()) {
-            Map<String, JsonNode> gs100Data =getGs100MonthlyHoursVrvBatch(imeis, dateFromS, dateToS, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu,
+            Map<String, JsonNode> gs100Data =getGs100MonthlyHoursVrvBatch(gs100Imeis, dateFromS, dateToS, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu,
                     working);
 
             gs100Data.values().stream()
@@ -680,10 +702,11 @@ public class ReportController {
             @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto,
             @PathVariable("hfromsa") int hfromsa, @PathVariable("mfromsa") int mfromsa, @PathVariable("htosa") int htosa, @PathVariable("mtosa") int mtosa,
             @PathVariable("hfromsu") int hfromsu, @PathVariable("mfromsu") int mfromsu, @PathVariable("htosu") int htosu, @PathVariable("mtosu") int mtosu,
-            @PathVariable("working") int working, @PathVariable("export_id") int export, @RequestBody String[] imeis) throws Exception {
+            @PathVariable("firm_id") int firmId, @PathVariable("working") int working, @PathVariable("export_id") int export, @RequestBody String[] imeis) throws Exception {
+        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
         ArrayList<Ippm> ippmArrayList = new ArrayList<>();
-        for (int i = 0; i < imeis.length; i++) {
-            Vehicle v = vehicleService.findByImei(imeis[i]);
+        for (String authorizedImei : authorizedImeis) {
+            Vehicle v = vehicleService.findByImei(authorizedImei);
             if (v.getDeviceType() == null) {
                 throw new ForbiddenException("Device type is not set for the vehicle. Please go to vehicle administration and set device type.");
             }
@@ -692,10 +715,10 @@ public class ReportController {
             }
             String res = "";
             if (v.getDeviceType() == 0) {
-                res = getTeltonikaMonthlyHoursVrv(imeis[i], dateFromS, dateToS, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu,
+                res = getTeltonikaMonthlyHoursVrv(authorizedImei, dateFromS, dateToS, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu,
                         mtosu, working);
             } else {
-                res = getGs100MonthlyHoursVrv(imeis[i], dateFromS, dateToS, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu,
+                res = getGs100MonthlyHoursVrv(authorizedImei, dateFromS, dateToS, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu,
                         mtosu, working);
             }
             if (res.length() > 5) {
@@ -739,14 +762,14 @@ public class ReportController {
 
     @PostMapping("api/firm/{firm_id}/report/ippmh/imeis/from/{from}/to/{to}/{hfrom}/{mfrom}/{hto}/{mto}/{hfromsa}/{mfromsa}/{htosa}/{mtosa}/{hfromsu}/{mfromsu}/{htosu}/{mtosu}/working/{working}/export/{export_id}")
     //working hours 1, not working 0
-    public byte[] izvestajOPredjenomPutuTelMesecniVRVExport2(@RequestBody List<String> imeis, @PathVariable("from") String dateFromS,
+    public byte[] izvestajOPredjenomPutuTelMesecniVRVExport2(@RequestBody List<String> imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS,
                                                             @PathVariable("to") String dateToS,
                                                             @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto,
                                                             @PathVariable("hfromsa") int hfromsa, @PathVariable("mfromsa") int mfromsa, @PathVariable("htosa") int htosa, @PathVariable("mtosa") int mtosa,
                                                             @PathVariable("hfromsu") int hfromsu, @PathVariable("mfromsu") int mfromsu, @PathVariable("htosu") int htosu, @PathVariable("mtosu") int mtosu,
                                                             @PathVariable("working") int working, @PathVariable("export_id") int export) throws Exception {
 
-        List<Vehicle> vehicles = vehicleService.findAllByImeiIn(imeis);
+        List<Vehicle> vehicles = getAuthorizedVehicles(firmId, imeis);
 
         for (Vehicle v : vehicles) {
             if (v.getDeviceType() == null) {
@@ -857,6 +880,7 @@ public class ReportController {
 
     @PostMapping("api/firm/{firm_id}/report/speed/imeis/from/{from}/to/{to}/{hfrom}/{mfrom}/{hto}/{mto}/max/{max}")
     private Response<List<DTOSpeed>> izvestajOPrekoracenjuBrzine2(@RequestBody List<String> imeis,
+                                                                 @PathVariable("firm_id") int firmId,
                                                                  @PathVariable("from") String dateFromS,
                                                                  @PathVariable("to") String dateToS,
                                                                  @PathVariable("hfrom") int hfrom,
@@ -865,7 +889,7 @@ public class ReportController {
                                                                  @PathVariable("mto") int mto,
                                                                  @PathVariable("max") int max) throws Exception {
 
-        List<Vehicle> vehicles = vehicleService.findAllByImeiIn(imeis);
+        List<Vehicle> vehicles = getAuthorizedVehicles(firmId, imeis);
 
         for (Vehicle v : vehicles) {
             if (v.getDeviceType() == null) {
@@ -975,6 +999,7 @@ public class ReportController {
      * @param export =2 vraca pdf, u suprotnom workbook
      */
     public byte[] izvestajOPrekoracenjuBrzineExport2(@RequestBody String[] imeis,
+                                                    @PathVariable("firm_id") int firmId,
                                                     @PathVariable("from") String dateFromS,
                                                     @PathVariable("to") String dateToS,
                                                     @PathVariable("hfrom") int hfrom,
@@ -984,7 +1009,8 @@ public class ReportController {
                                                     @PathVariable("max") int max,
                                                     @PathVariable("export_id") int export,
                                                     @RequestParam() boolean peakSelected) throws Exception {
-        List<Vehicle> vehicles = vehicleService.findAllByImeiIn(Arrays.asList(imeis));
+        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
+        List<Vehicle> vehicles = vehicleService.findAllByImeiIn(authorizedImeis);
 
         for (Vehicle v : vehicles) {
             if (v.getDeviceType() == null) {
@@ -995,7 +1021,7 @@ public class ReportController {
 
         List<DTOSpeed> allData = new ArrayList<>();
 
-        Response<List<DTOSpeed>> listResponse = izvestajOPrekoracenjuBrzine2(Arrays.asList(imeis), dateFromS, dateToS, hfrom, mfrom, hto, mto, max);
+        Response<List<DTOSpeed>> listResponse = izvestajOPrekoracenjuBrzine2(authorizedImeis, firmId, dateFromS, dateToS, hfrom, mfrom, hto, mto, max);
 
 
         if (listResponse != null && listResponse.getData() != null) {
@@ -1007,7 +1033,7 @@ public class ReportController {
                 .filter(v -> v.getFirm() != null)
                 .map(v -> v.getFirm().getName())
                 .findFirst().orElse("");
-        return reportService.speedExport2(allData, Arrays.asList(imeis), vehicles, export, dateFromS, dateToS, peakSelected, max, firmName);
+        return reportService.speedExport2(allData, authorizedImeis, vehicles, export, dateFromS, dateToS, peakSelected, max, firmName);
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1050,10 +1076,11 @@ public class ReportController {
 
     //@PostMapping("api/firm/{firm_id}/report/route/imeis/from/{from}/to/{to}/{hfrom}/{mfrom}/{hto}/{mto}/export/{export_id}")
     //done
-    public byte[] izvestajORelacijamaVozilaExportAutomatski(@RequestBody String[] imeis, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS,
+    public byte[] izvestajORelacijamaVozilaExportAutomatski(@RequestBody String[] imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS,
                                                   @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto,
                                                   @RequestParam("minDistance") Double minDistance, @PathVariable("export_id") int export) throws Exception {
-        List<Vehicle> vehicles = vehicleService.findAllByImeiIn(Arrays.asList(imeis));
+        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
+        List<Vehicle> vehicles = vehicleService.findAllByImeiIn(authorizedImeis);
 
         ObjectMapper mapper = new ObjectMapper();
 
@@ -1107,7 +1134,7 @@ public class ReportController {
         }
 
         String firmName = vehicles.stream().filter(vv -> vv.getFirm() != null).map(vv -> vv.getFirm().getName()).findFirst().orElse("");
-        return reportService.routeExport2(results, Arrays.asList(imeis), vehicles, export, dateFromS, dateToS, firmName);
+        return reportService.routeExport2(results, authorizedImeis, vehicles, export, dateFromS, dateToS, firmName);
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1139,7 +1166,7 @@ public class ReportController {
 
 
     @PostMapping("api/firm/{firm_id}/report/standing/imeis/from/{from}/to/{to}/{hfrom}/{mfrom}/{hto}/{mto}/min/{min}/minIdle/{minIdle}")
-    private List<Idle> izvestajOStajanju2(@RequestBody List<String> imeis, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS,
+    private List<Idle> izvestajOStajanju2(@RequestBody List<String> imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS,
                                           @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto,
                                           @PathVariable("min") int min,
                                           @PathVariable("minIdle") int minIdle,
@@ -1147,7 +1174,7 @@ public class ReportController {
 
 
         try {
-            List<Vehicle> vehicles = vehicleService.findAllByImeiIn(imeis);
+            List<Vehicle> vehicles = getAuthorizedVehicles(firmId, imeis);
 
             for (Vehicle v : vehicles) {
                 if (v.getDeviceType() == null) {
@@ -1229,6 +1256,7 @@ public class ReportController {
     @PostMapping("api/firm/{firm_id}/report/standing/from/{from}/to/{to}/{hfrom}/{mfrom}/{hto}/{mto}/min/{min}/minIdle/{minIdle}/export/{eid}")
     public byte[] izvestajOStajanjuExport(
             @PathVariable("eid") int eid,
+            @PathVariable("firm_id") int firmId,
             @PathVariable("from") String dateFromS,
             @PathVariable("to") String dateToS,
             @PathVariable("hfrom") int hfrom,
@@ -1241,7 +1269,7 @@ public class ReportController {
             @RequestParam("isIdle") boolean isIdle
     ) throws Exception {
         try {
-            List<Idle> idleList = izvestajOStajanju2(Arrays.asList(imeis), dateFromS, dateToS, hfrom, mfrom, hto, mto, min, minIdle, isIdle);
+            List<Idle> idleList = izvestajOStajanju2(Arrays.asList(imeis), firmId, dateFromS, dateToS, hfrom, mfrom, hto, mto, min, minIdle, isIdle);
 
             String firmName = "";
             try {
@@ -1339,21 +1367,22 @@ public class ReportController {
      * @throws Exception
      */
     private byte[] izvestajOTemperaturamaExport(@PathVariable("export_id") int export, @PathVariable("IMEI") String imei,
-            @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS,
+            @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS,
             @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto,
             @RequestBody String[] imeis) throws Exception {
+        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
         ArrayList<Temperature> temperatureArrayList = new ArrayList<>();
-        for (int i = 0; i < imeis.length; i++) {
-            Vehicle v = vehicleService.findByImei(imeis[i]);
+        for (String authorizedImei : authorizedImeis) {
+            Vehicle v = vehicleService.findByImei(authorizedImei);
             String res = "";
             if (v.getDeviceType() == null) {
                 throw new Exception(
                         "Device type is not set for the vehicle. Please go to vehicle administration and set device type. Reg: " + v.getRegistration());
             }
             if (v.getDeviceType() == 0) {
-                res = getTeltonikaTemp(imeis[i], dateFromS, dateToS, hfrom, mfrom, hto, mto);
+                res = getTeltonikaTemp(authorizedImei, dateFromS, dateToS, hfrom, mfrom, hto, mto);
             } else {
-                res = getGs100Temp(imeis[i], dateFromS, dateToS, hfrom, mfrom, hto, mto);
+                res = getGs100Temp(authorizedImei, dateFromS, dateToS, hfrom, mfrom, hto, mto);
             }
             if (res.length() > 5) {
                 Gson gson = new Gson(); // Or use new GsonBuilder().create();

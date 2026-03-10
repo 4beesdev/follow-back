@@ -62,6 +62,8 @@ public class WebSecurity extends WebSecurityConfigurerAdapter {
                 // --- Public endpoints (no JWT required) ---
                 .antMatchers(HttpMethod.POST, SIGN_UP_URL).permitAll()
                 .antMatchers(HttpMethod.POST, REFRESH_URL).permitAll()
+                // --- Reports require JWT (prod fix 3ba8ec2) ---
+                .antMatchers("/api/reports/**", "/api/firm/*/report/**").authenticated()
                 .antMatchers(HttpMethod.GET, "/api/language/**").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/integration/**").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/firm/**").permitAll()

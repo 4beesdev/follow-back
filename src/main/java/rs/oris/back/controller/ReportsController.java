@@ -8,7 +8,11 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import rs.oris.back.controller.wrapper.ForbiddenException;
+import rs.oris.back.domain.User;
 import rs.oris.back.domain.reports.daily_movement_consumption.DailyMovementConsumptionReport;
 import rs.oris.back.domain.reports.driver_relation.DriverRelationReport;
 import rs.oris.back.domain.reports.driver_relation.DriverRelationReportData;
@@ -28,6 +32,7 @@ import rs.oris.back.domain.Driver;
 import rs.oris.back.domain.Vehicle;
 import rs.oris.back.repository.DriverRepository;
 import rs.oris.back.service.ReportService;
+import rs.oris.back.service.UserService;
 import rs.oris.back.service.VehicleService;
 
 import java.time.LocalDateTime;
@@ -43,8 +48,37 @@ import java.util.Optional;
 public class ReportsController {
 
     private final ReportService reportsService;
+    private final UserService userService;
     private final VehicleService vehicleService;
     private final DriverRepository driverRepository;
+
+    User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getName() == null || "anonymousUser".equals(authentication.getName())) {
+            throw new ForbiddenException("Bad token");
+        }
+        try {
+            return userService.findByUsername(authentication.getName());
+        } catch (Exception e) {
+            throw new ForbiddenException("Bad token");
+        }
+    }
+
+    List<String> filterAuthorizedImeis(List<String> imeis) {
+        try {
+            return vehicleService.filterAccessibleImeis(getCurrentUser(), null, imeis);
+        } catch (Exception e) {
+            throw new ForbiddenException("Bad token");
+        }
+    }
+
+    String filterAuthorizedImei(String imei) {
+        List<String> authorizedImeis = filterAuthorizedImeis(java.util.Collections.singletonList(imei));
+        if (authorizedImeis.isEmpty()) {
+            throw new ForbiddenException("User does not have access to the requested vehicle.");
+        }
+        return authorizedImeis.get(0);
+    }
 
     private String getFirmName(List<String> imeis) {
         try {
@@ -87,8 +121,8 @@ public class ReportsController {
             Double minDistance
 
     ) {
-        //Pozovi servis metodu
-        DriverVehicleRelationReport driverVehicleRelationReport = reportsService.getDriverRelationReportByVehicle(from, to, imeis,minDistance);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        DriverVehicleRelationReport driverVehicleRelationReport = reportsService.getDriverRelationReportByVehicle(from, to, filteredImeis,minDistance);
         return ResponseEntity.ok(driverVehicleRelationReport);
     }
 
@@ -221,13 +255,10 @@ public class ReportsController {
 
     ) {
 
-        //Pozovi servisnu metodu
-        DriverVehicleRelationReport driverVehicleRelationReport = reportsService.getDriverRelationReportByVehicle(from, to, imeis,minDistance);
-        //Proveri da li postoji ime vozila
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        DriverVehicleRelationReport driverVehicleRelationReport = reportsService.getDriverRelationReportByVehicle(from, to, filteredImeis,minDistance);
         Optional<String> optionalRegistration = driverVehicleRelationReport.getReports().stream().filter(x -> x.getRegistration() != null && !x.getRegistration().isEmpty()).findFirst().map(x -> x.getRegistration());
-        //Ako postoji ime vozila uzmi ga, ako ne uzmi prazan string
         String registration = optionalRegistration.isPresent() ? optionalRegistration.get() : "";
-        //Kreiraj hedere za pdf fajl
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + "Izvetaj o vozilima vozaca " + registration + " od: " + from.toLocalDate() + " do: " + to.toLocalDate() + ".pdf");
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
@@ -264,13 +295,10 @@ public class ReportsController {
             @RequestParam(name="minDistance")
             Double minDistance
     ) {
-        //Pozovi servisnu metodu
-        DriverVehicleRelationReport driverRelationsReport = reportsService.getDriverRelationReportByVehicle(from, to, imeis,minDistance);
-        //Proveri da li postoji ime vozila
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        DriverVehicleRelationReport driverRelationsReport = reportsService.getDriverRelationReportByVehicle(from, to, filteredImeis,minDistance);
         Optional<String> optionalRegistration = driverRelationsReport.getReports().stream().filter(x -> x.getRegistration() != null && !x.getRegistration().isEmpty()).findFirst().map(x -> x.getRegistration());
-        //Ako postoji ime vozila uzmi ga, ako ne uzmi prazan string
         String registration = optionalRegistration.isPresent() ? optionalRegistration.get() : "";
-        //Kreiraj hedere za xls fajl
         HttpHeaders headers = new HttpHeaders();
         headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + "Izvetaj o vozilima vozaca " + registration + " od: " + from.toLocalDate() + " do: " + to.toLocalDate() + ".xls");
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
@@ -304,7 +332,8 @@ public class ReportsController {
     ) {
 
         //Pozovi servisnu metodu
-        List<DriverRelationVehicleRoutingAllInfo> vehiclePathForPeriod = reportsService.getVehiclePathForPeriod(from, to, imeis);
+        String filteredImei = filterAuthorizedImei(imeis);
+        List<DriverRelationVehicleRoutingAllInfo> vehiclePathForPeriod = reportsService.getVehiclePathForPeriod(from, to, filteredImei);
         return ResponseEntity.ok(vehiclePathForPeriod);
     }
 
@@ -330,7 +359,8 @@ public class ReportsController {
             Double minDistance
     ) {
         //Pozovi servisnu metodu
-        List<DriverRelationsFuelReport> driverRelationsFuelReport = reportsService.getDriverRelationsFuelReport(from, to, imeis, fuelMargin,emptyingMargin,minDistance);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<DriverRelationsFuelReport> driverRelationsFuelReport = reportsService.getDriverRelationsFuelReport(from, to, filteredImeis, fuelMargin,emptyingMargin,minDistance);
 
         return ResponseEntity.ok(driverRelationsFuelReport);
     }
@@ -357,7 +387,8 @@ public class ReportsController {
             Double minDistance
     ) {
         //Pozovi servisnu metodu
-        List<DriverRelationsFuelReport> driverRelationsFuelReport = reportsService.getDriverRelationsFuelReport(from, to, imeis, fuelMargin, emptyingMargin,minDistance);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<DriverRelationsFuelReport> driverRelationsFuelReport = reportsService.getDriverRelationsFuelReport(from, to, filteredImeis, fuelMargin, emptyingMargin,minDistance);
 
         //Kreiraj hedere za pdf fajl
         HttpHeaders headers = new HttpHeaders();
@@ -420,7 +451,8 @@ public class ReportsController {
             Double minDistance
     ) {
         //Pozovi servisnu metodu
-        List<DriverRelationsFuelReport> driverRelationsFuelReport = reportsService.getDriverRelationsFuelReport(from, to, imeis, fuelMargin, emptyingMargin,minDistance);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<DriverRelationsFuelReport> driverRelationsFuelReport = reportsService.getDriverRelationsFuelReport(from, to, filteredImeis, fuelMargin, emptyingMargin,minDistance);
 
         //Kreiraj hedere za xls fajl
         HttpHeaders headers = new HttpHeaders();
@@ -476,7 +508,8 @@ public class ReportsController {
             List<String> imeis
     ) {
         //Pozovi servisnu metodu
-        List<SensorActivationReport> sensorActivationReport = reportsService.getSensorActivationReport(from, to, imeis);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<SensorActivationReport> sensorActivationReport = reportsService.getSensorActivationReport(from, to, filteredImeis);
         return ResponseEntity.ok(sensorActivationReport);
 
     }
@@ -498,7 +531,8 @@ public class ReportsController {
             List<String> imeis
     ) {
         //Pozovi servisnu metodu
-        List<SensorActivationReport> sensorActivationReport = reportsService.getSensorActivationReport(from, to, imeis);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<SensorActivationReport> sensorActivationReport = reportsService.getSensorActivationReport(from, to, filteredImeis);
 
         //Kreiraj hedere za pdf fajl
         HttpHeaders headers = new HttpHeaders();
@@ -506,15 +540,15 @@ public class ReportsController {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
         log.info("####################################");
-        log.info(LocalDateTime.now() + " - Generisanje PDF izvestaja o aktivaciji senzora za period od: " + from + " do: " + to + " za vozila: " + imeis);
+        log.info(LocalDateTime.now() + " - Generisanje PDF izvestaja o aktivaciji senzora za period od: " + from + " do: " + to + " za vozila: " + filteredImeis);
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new SensorsReportPdfExporter(to, from, getFirmName(imeis));
+        PdfExporter pdfExporter = new SensorsReportPdfExporter(to, from, getFirmName(filteredImeis));
         byte[] pdf = pdfExporter.export(sensorActivationReport, SensorActivationReport.class, "Izveštaj o aktivaciji senzora");
         ByteArrayResource resource = new ByteArrayResource(pdf);
 
         log.info("####################################");
-        log.info(LocalDateTime.now() + " - PDF izvestaj o aktivaciji senzora generisan za period od: " + from + " do: " + to + " za vozila: " + imeis);
+        log.info(LocalDateTime.now() + " - PDF izvestaj o aktivaciji senzora generisan za period od: " + from + " do: " + to + " za vozila: " + filteredImeis);
         return ResponseEntity.ok()
                 .headers(headers)
                 .contentLength(pdf.length)
@@ -538,7 +572,8 @@ public class ReportsController {
             List<String> imeis
     ) {
         //Pozovi servisnu metodu
-        List<SensorActivationReport> sensorActivationReport = reportsService.getSensorActivationReport(from, to, imeis);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<SensorActivationReport> sensorActivationReport = reportsService.getSensorActivationReport(from, to, filteredImeis);
 
         //Kreiraj hedere za xls fajl
         HttpHeaders headers = new HttpHeaders();
@@ -546,14 +581,14 @@ public class ReportsController {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
         log.info("####################################");
-        log.info(LocalDateTime.now() + " - Generisanje XLS izvestaja o aktivaciji senzora za period od: " + from + " do: " + to + " za vozila: " + imeis);
+        log.info(LocalDateTime.now() + " - Generisanje XLS izvestaja o aktivaciji senzora za period od: " + from + " do: " + to + " za vozila: " + filteredImeis);
 
         //Kreiraj xls exporter i obradi podatke
         XlsExporter xlsExporter = new SensorsReportXlsExporter(from, to);
         byte[] xls = xlsExporter.export(sensorActivationReport, SensorActivationReport.class, "Izveštaj o aktivaciji senzora");
 
         log.info("####################################");
-        log.info(LocalDateTime.now() + " - XLS izvestaj o aktivaciji senzora generisan za period od: " + from + " do: " + to + " za vozila: " + imeis);
+        log.info(LocalDateTime.now() + " - XLS izvestaj o aktivaciji senzora generisan za period od: " + from + " do: " + to + " za vozila: " + filteredImeis);
 
         ByteArrayResource resource = new ByteArrayResource(xls);
         return ResponseEntity.ok()
@@ -584,7 +619,8 @@ public class ReportsController {
             List<String> imeis
     ) {
         //Pozovi servisnu metodu
-        List<MonthlyFuelConsumptionReport> monthFuelReport = reportsService.getMonthFuelReport(from, to, imeis, fuelMargin, emptyingMargin);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<MonthlyFuelConsumptionReport> monthFuelReport = reportsService.getMonthFuelReport(from, to, filteredImeis, fuelMargin, emptyingMargin);
 
         //Kreiraj hedere za pdf fajl
         HttpHeaders headers = new HttpHeaders();
@@ -625,7 +661,8 @@ public class ReportsController {
             List<String> imeis
     ) {
         //Pozovi servisnu metodu
-        List<MonthlyFuelConsumptionReport> monthFuelReport = reportsService.getMonthFuelReport(from, to, imeis, fuelMargin, emptyingMargin);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<MonthlyFuelConsumptionReport> monthFuelReport = reportsService.getMonthFuelReport(from, to, filteredImeis, fuelMargin, emptyingMargin);
 
         //Kreiraj hedere za xls fajl
         HttpHeaders headers = new HttpHeaders();
@@ -662,7 +699,8 @@ public class ReportsController {
             Integer emptyingMargin
     ) {
         //Pozovi servisnu metodu
-        List<MonthlyFuelConsumptionReport> monthFuelReport = reportsService.getMonthFuelReport(from, to, imeis, fuelMargin,emptyingMargin);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<MonthlyFuelConsumptionReport> monthFuelReport = reportsService.getMonthFuelReport(from, to, filteredImeis, fuelMargin,emptyingMargin);
         return ResponseEntity.ok(monthFuelReport);
     }
 
@@ -686,7 +724,8 @@ public class ReportsController {
             Integer rpm
     ) {
         //Pozovi servisnu metodu
-        EffectiveWorkingHoursReport monthFuelReport = reportsService.getEffectiveWorkingHoursReport(from, to, imeis, rpm, fuelMargin,emptyingMargin);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        EffectiveWorkingHoursReport monthFuelReport = reportsService.getEffectiveWorkingHoursReport(from, to, filteredImeis, rpm, fuelMargin,emptyingMargin);
         return ResponseEntity.ok(monthFuelReport);
     }
 
@@ -713,7 +752,8 @@ public class ReportsController {
             Integer fuelMargin
     ) {
         //Pozovi servisnu metodu
-        EffectiveWorkingHoursReport effectiveWorkingHoursReportData = reportsService.getEffectiveWorkingHoursReport(from, to, imeis, rpm, fuelMargin, emptyingMargin);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        EffectiveWorkingHoursReport effectiveWorkingHoursReportData = reportsService.getEffectiveWorkingHoursReport(from, to, filteredImeis, rpm, fuelMargin, emptyingMargin);
 
         //Kreiraj hedere za pdf fajl
         HttpHeaders headers = new HttpHeaders();
@@ -765,7 +805,8 @@ public class ReportsController {
             Integer fuelMargin
     ) {
         //Pozovi servisnu metodu
-        EffectiveWorkingHoursReport monthFuelReport = reportsService.getEffectiveWorkingHoursReport(from, to, imeis, rpm, fuelMargin, emptyingMargin);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        EffectiveWorkingHoursReport monthFuelReport = reportsService.getEffectiveWorkingHoursReport(from, to, filteredImeis, rpm, fuelMargin, emptyingMargin);
 
 
 ////        //for testing
@@ -818,7 +859,8 @@ public class ReportsController {
         from = from.with(LocalTime.MIN);
         to   = to.with(LocalTime.of(22, 59));
 
-        List<DailyMovementConsumptionReport> dailyMovementConsumptionReport = reportsService.getDailyMovementConsumptionReport(from, to, imeis, emptyingMargin, fuelMargin);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<DailyMovementConsumptionReport> dailyMovementConsumptionReport = reportsService.getDailyMovementConsumptionReport(from, to, filteredImeis, emptyingMargin, fuelMargin);
         return ResponseEntity.ok(dailyMovementConsumptionReport);
     }
     @GetMapping("/firm/{firmId}/daily-movement-consumption/xls")
@@ -843,7 +885,8 @@ public class ReportsController {
         from=from.with(LocalTime.MIN);
         to = to.with(LocalTime.of(22, 59));
         //Pozovi servisnu metodu
-        List<DailyMovementConsumptionReport> dailyMovementConsumptionReport = reportsService.getDailyMovementConsumptionReport(from, to, imeis, emptyingMargin, fuelMargin);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<DailyMovementConsumptionReport> dailyMovementConsumptionReport = reportsService.getDailyMovementConsumptionReport(from, to, filteredImeis, emptyingMargin, fuelMargin);
 
         //promeni datum - u .
         for (DailyMovementConsumptionReport movementConsumptionReport : dailyMovementConsumptionReport) {
@@ -890,7 +933,8 @@ public class ReportsController {
         from=from.with(LocalTime.MIN);
         to = to.with(LocalTime.of(22, 59));
         //Pozovi servisnu metodu
-        List<DailyMovementConsumptionReport> dailyMovementConsumptionReport = reportsService.getDailyMovementConsumptionReport(from, to, imeis, emptyingMargin, fuelMargin);
+        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        List<DailyMovementConsumptionReport> dailyMovementConsumptionReport = reportsService.getDailyMovementConsumptionReport(from, to, filteredImeis, emptyingMargin, fuelMargin);
 
         //promeni datum - u .
         for (DailyMovementConsumptionReport movementConsumptionReport : dailyMovementConsumptionReport) {

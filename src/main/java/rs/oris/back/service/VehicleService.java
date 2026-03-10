@@ -15,6 +15,7 @@ import rs.oris.back.repository.*;
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class VehicleService {
@@ -383,5 +384,85 @@ public class VehicleService {
 
     public List<Vehicle> findAllByImeiIn(List<String> imeis) {
         return vehicleRepository.findAllByImeiIn(imeis);
+    }
+
+    public List<Vehicle> getAccessibleVehicles(User user, Integer firmId) throws Exception {
+        if (user == null) {
+            throw new Exception("Bad token");
+        }
+
+        if (Boolean.TRUE.equals(user.getSuperAdmin())) {
+            if (firmId == null) {
+                return Collections.emptyList();
+            }
+            Optional<Firm> optionalFirm = firmRepository.findById(firmId);
+            if (!optionalFirm.isPresent()) {
+                throw new Exception("Invalid firm id");
+            }
+            return vehicleRepository.findByFirmFirmIdAndDeletedDate(optionalFirm.get().getFirmId(), null);
+        }
+
+        if (user.getFirm() == null) {
+            throw new Exception("Firm not set!");
+        }
+
+        if (Boolean.TRUE.equals(user.getAdmin())) {
+            return vehicleRepository.findByFirmFirmIdAndDeletedDate(user.getFirm().getFirmId(), null);
+        }
+
+        if (firmId != null) {
+            return vehicleRepository.findAccessibleByUserIdAndFirmId(user.getUserId(), firmId);
+        }
+        return vehicleRepository.findAccessibleByUserId(user.getUserId());
+    }
+
+    public List<String> filterAccessibleImeis(User user, Integer firmId, List<String> requestedImeis) throws Exception {
+        if (requestedImeis == null || requestedImeis.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<String> normalizedImeis = requestedImeis.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(x -> !x.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+
+        if (normalizedImeis.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        if (Boolean.TRUE.equals(user.getSuperAdmin())) {
+            if (firmId == null) {
+                Set<String> existingImeis = vehicleRepository.findAllByImeiIn(normalizedImeis).stream()
+                        .filter(Objects::nonNull)
+                        .map(Vehicle::getImei)
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toSet());
+                return normalizedImeis.stream()
+                        .filter(existingImeis::contains)
+                        .collect(Collectors.toList());
+            }
+            Set<String> firmImeis = vehicleRepository.findByFirmFirmIdAndDeletedDate(firmId, null).stream()
+                    .map(Vehicle::getImei)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            return normalizedImeis.stream()
+                    .filter(firmImeis::contains)
+                    .collect(Collectors.toList());
+        }
+
+        if (Boolean.TRUE.equals(user.getAdmin())) {
+            int userFirmId = user.getFirm().getFirmId();
+            Set<String> firmImeis = vehicleRepository.findByFirmFirmIdAndDeletedDate(userFirmId, null).stream()
+                    .map(Vehicle::getImei)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet());
+            return normalizedImeis.stream()
+                    .filter(firmImeis::contains)
+                    .collect(Collectors.toList());
+        }
+
+        return vehicleRepository.findAccessibleImeisByUserIdAndImeiIn(user.getUserId(), normalizedImeis);
     }
 }

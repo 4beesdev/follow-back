@@ -4,7 +4,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import rs.oris.back.domain.Firm;
 import rs.oris.back.domain.Vehicle;
 import rs.oris.back.domain.projection.ReportEngineProjection;
 
@@ -41,5 +40,23 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Integer> {
 
 
     List<Vehicle> findAllByImeiIn(List<String> imeis);
+
+    @Query("SELECT DISTINCT v FROM Vehicle v " +
+           "JOIN VehicleVehicleGroup vvg ON vvg.vehicle = v " +
+           "JOIN UserVehicleGroup uvg ON uvg.vehicleGroup = vvg.vehicleGroup " +
+           "WHERE uvg.user.userId = :userId AND v.deletedDate IS NULL")
+    List<Vehicle> findAccessibleByUserId(@Param("userId") int userId);
+
+    @Query("SELECT DISTINCT v FROM Vehicle v " +
+           "JOIN VehicleVehicleGroup vvg ON vvg.vehicle = v " +
+           "JOIN UserVehicleGroup uvg ON uvg.vehicleGroup = vvg.vehicleGroup " +
+           "WHERE uvg.user.userId = :userId AND v.deletedDate IS NULL AND v.firm.firmId = :firmId")
+    List<Vehicle> findAccessibleByUserIdAndFirmId(@Param("userId") int userId, @Param("firmId") int firmId);
+
+    @Query("SELECT DISTINCT v.imei FROM Vehicle v " +
+           "JOIN VehicleVehicleGroup vvg ON vvg.vehicle = v " +
+           "JOIN UserVehicleGroup uvg ON uvg.vehicleGroup = vvg.vehicleGroup " +
+           "WHERE uvg.user.userId = :userId AND v.deletedDate IS NULL AND v.imei IN :imeis")
+    List<String> findAccessibleImeisByUserIdAndImeiIn(@Param("userId") int userId, @Param("imeis") List<String> imeis);
 
 }

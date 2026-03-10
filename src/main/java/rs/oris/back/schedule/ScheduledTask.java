@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -35,6 +36,9 @@ import javax.mail.util.ByteArrayDataSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import rs.oris.back.controller.ReportController;
@@ -340,7 +344,14 @@ public class ScheduledTask {
         log.info("####################################");
         log.info(LocalDateTime.now() + " Generating report type " + userReport.getReport() + " for UserReport ID: " + userReport.getUserReportId());
 
+        Authentication previousAuthentication = SecurityContextHolder.getContext().getAuthentication();
+        if (userReport.getUser() != null && userReport.getUser().getUsername() != null) {
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(userReport.getUser().getUsername(), null, Collections.emptyList()));
+        }
+
         byte[] file = null;
+        try {
         switch (userReport.getReport()) {
         /**
          * izradjuje izvestaj u zavisnosti od tipa izvestaja
@@ -355,7 +366,7 @@ public class ScheduledTask {
                 log.info("####################################");
                 log.info(LocalDateTime.now() + " Calling izvestajOPredjenomPutuExport for UserReport ID: " + userReport.getUserReportId());
                 file = reportController.izvestajOPredjenomPutuExport(userReport.getImei()[0], fromString, toString, userReport.getHfrom(),
-                        userReport.getMfrom(), 22, 59, userReport.getXlsxpdf(), userReport.getImei());
+                        userReport.getMfrom(), 22, 59, userReport.getFirm().getFirmId(), userReport.getXlsxpdf(), userReport.getImei());
                 log.info("####################################");
                 log.info(LocalDateTime.now() + " Sending email for UserReport ID: " + userReport.getUserReportId());
                 sendMail(userReport, file, true);
@@ -383,7 +394,7 @@ public class ScheduledTask {
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
                 String to = formatter.format(lastDateOfPreviousMonth);
                 String from = formatter.format(firstDateOfPreviousMonth);
-                file = reportController.izvestajOPredjenomPutuMesecniExport(userReport.getImei()[0], from, to, userReport.getXlsxpdf(), userReport.getImei());
+                file = reportController.izvestajOPredjenomPutuMesecniExport(userReport.getImei()[0], from, to, userReport.getFirm().getFirmId(), userReport.getXlsxpdf(), userReport.getImei());
                 sendMail(userReport, file, true);
                 automaticReportLoggerService.saveSuccessLog("ippm", userReport.getEmail(), userReport.getImei());
                 LoggerFileUtil.logToFile("Uspešno kreiran izveštaj - izvestajOPredjenomPutuMesecni");
@@ -409,7 +420,7 @@ public class ScheduledTask {
                 file = reportController.izvestajOPredjenomPutuTelMesecniVRVExport(userReport.getImei()[0], from, to, userReport.getHfrom(),
                         userReport.getMfrom(), userReport.getHto(), userReport.getMto(), userReport.getHfromsa(), userReport.getMfromsa(),
                         userReport.getHtosa(), userReport.getMtosa(), userReport.getHfromsu(), userReport.getMfromsu(), userReport.getHtosu(),
-                        userReport.getMtosu(), userReport.getWorking(), userReport.getXlsxpdf(), userReport.getImei());
+                        userReport.getMtosu(), userReport.getFirm().getFirmId(), userReport.getWorking(), userReport.getXlsxpdf(), userReport.getImei());
                 sendMail(userReport, file, true);
                 automaticReportLoggerService.saveSuccessLog("ippmvrv", userReport.getEmail(), userReport.getImei());
                 LoggerFileUtil.logToFile("Uspešno kreiran izveštaj - izvestajOPredjenomPutuMesecniVRV");
@@ -433,7 +444,7 @@ public class ScheduledTask {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 String toString = formatter.format(to);
                 String fromString = formatter.format(from);
-                file = reportController.izvestajOPrekoracenjuBrzineExport2(userReport.getImei(), fromString, toString, userReport.getHfrom(),
+                file = reportController.izvestajOPrekoracenjuBrzineExport2(userReport.getImei(), userReport.getFirm().getFirmId(), fromString, toString, userReport.getHfrom(),
                         userReport.getMfrom(), 22, 59, userReport.getMaxSpeed(), userReport.getXlsxpdf(), false);
                 sendMail(userReport, file, true);
                 automaticReportLoggerService.saveSuccessLog("ipb", userReport.getEmail(), new String[] { userReport.getRouteImei() });
@@ -453,7 +464,7 @@ public class ScheduledTask {
                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
                 String toString = formatter.format(to);
                 String fromString = formatter.format(from);
-                file = reportController.izvestajORelacijamaVozilaExportAutomatski(userReport.getImei(), fromString, toString, userReport.getHfrom(), userReport.getMfrom(), 22,
+                file = reportController.izvestajORelacijamaVozilaExportAutomatski(userReport.getImei(), userReport.getFirm().getFirmId(), fromString, toString, userReport.getHfrom(), userReport.getMfrom(), 22,
                         59, userReport.getMinDistance(), userReport.getXlsxpdf());
                 sendMail(userReport, file, true);
 
@@ -545,7 +556,7 @@ public class ScheduledTask {
 
                 //
                 //ne znam sta je ovo mi odakle je ali treba za metodu
-                file = reportController.izvestajOStajanjuExport(userReport.getXlsxpdf(), fromString, toString, userReport.getHfrom(), userReport.getMfrom(), 22,
+                file = reportController.izvestajOStajanjuExport(userReport.getXlsxpdf(), userReport.getFirm().getFirmId(), fromString, toString, userReport.getHfrom(), userReport.getMfrom(), 22,
                         59, userReport.getMinIdle(), userReport.getMin(), userReport.getImei(), userReport.getIsIdle());
 
                 sendMail(userReport, file, true);
@@ -729,6 +740,9 @@ public class ScheduledTask {
             break;
         default:
             break;
+        }
+        } finally {
+            SecurityContextHolder.getContext().setAuthentication(previousAuthentication);
         }
     }
 
