@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import rs.oris.back.config.MongoServerConfig;
+import rs.oris.back.config.security.WebConfig;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.*;
 import rs.oris.back.domain.dto.NotifBody;

@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
+import rs.oris.back.config.security.WebConfig;
 import org.springframework.web.util.UriComponentsBuilder;
 import rs.oris.back.config.MongoServerConfig;
 import rs.oris.back.controller.wrapper.Response;

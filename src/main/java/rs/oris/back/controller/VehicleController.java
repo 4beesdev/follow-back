@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 import rs.oris.back.config.security.AuthUtil;
+import rs.oris.back.config.security.WebConfig;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.NotificationModel;
 import rs.oris.back.domain.User;

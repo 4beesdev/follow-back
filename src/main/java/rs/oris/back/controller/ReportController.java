@@ -24,6 +24,7 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 import rs.oris.back.config.MongoServerConfig;
+import rs.oris.back.config.security.WebConfig;
 import rs.oris.back.controller.wrapper.ForbiddenException;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.Event;
@@ -1409,7 +1410,6 @@ public class ReportController {
         //        uri = "http://localhost:8080/api/imei/" + imei + "/last" + "?isGs100="+isGs100;
         uri = mongoServerConfig.getMongoBaseUrl() + "/api/imei/" + imei + "/last" + "?isGs100=" + (byImei.getDeviceType() == 1);
 //        uri = "http://localhost:8080/api/imei/" + imei + "/last" + "?isGs100=" + (byImei.getDeviceType() == 1);
-
         Gs100 result = restTemplate.getForObject(uri, Gs100.class);
         if (result == null) {
             return null;
@@ -1478,7 +1478,6 @@ public class ReportController {
             fuelMargine = 0;
         }
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + fuelMargine;
-
         try {
             String result = restTemplate.getForObject(uri, String.class);
             return result;
@@ -1497,7 +1496,6 @@ public class ReportController {
             fuelMargine = 0;
         }
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/1/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + fuelMargine;
-
         try {
             String result = restTemplate.getForObject(uri, String.class);
             return result;
@@ -1516,7 +1514,6 @@ public class ReportController {
         Map<String, String> cacheDriverNames = new HashMap<>();
 
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
-
         try {
             ResponseEntity<Map<String, List<Teltonika>>> responseEntity = restTemplate.exchange(
                     uri,
@@ -1550,7 +1547,6 @@ public class ReportController {
         List<GsHistoryDTO> gsHistoryDTOS = new LinkedList<>();
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/1/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
         Map<String, String> cacheDriverNames = new HashMap<>();
-
         try {
             ResponseEntity<Map<String, List<Gs100>>> responseEntity = restTemplate.exchange(
                     uri,
@@ -2170,7 +2166,7 @@ public class ReportController {
         log.info("GeozoneReport firmId={} imei={} geozoneId={} from={} to={} deviceType={} historyUri={}",
                 resolvedFirmId, imei, geozoneId, dateFromS, dateToS, deviceType, uri);
 
-        RestTemplate restTemplate = new RestTemplate();
+        RestTemplate restTemplate = WebConfig.createRestTemplate(30_000, 300_000);
         String body;
         try {
             ResponseEntity<String> historyResponse = restTemplate.exchange(uri, HttpMethod.GET, null, String.class);
@@ -2609,7 +2605,6 @@ public class ReportController {
             uri = mongoServerConfig.getMongoBaseUrl() + "/api/history/0/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS;
         }
 
-
         String result = restTemplate.getForObject(uri, String.class);
         List<Gs100> gs100List = new ArrayList<>();
         ObjectMapper mapper = new ObjectMapper();
@@ -2754,7 +2749,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/monthly/hours";
 
-
         String result = restTemplate.getForObject(uri, String.class);
         return result;
     }
@@ -2769,7 +2763,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/" + hfromsa + "/" + mfromsa + "/" + htosa + "/" + mtosa + "/" + hfromsu + "/" + mfromsu + "/" + htosu + "/" + mtosu + "/working/" + working;
 
-
         String result = restTemplate.getForObject(uri, String.class);
         return result;
     }
@@ -2778,7 +2771,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imeis/" + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/" + hfromsa + "/" + mfromsa + "/" + htosa + "/" + mtosa + "/" + hfromsu + "/" + mfromsu + "/" + htosu + "/" + mtosu + "/working/"
                 + working+ "?imeis=" + String.join("&imeis=", gs100Imeis);;
-
 
         ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
@@ -2800,7 +2792,6 @@ public class ReportController {
                 + mto + "/" + hfromsa + "/" + mfromsa + "/" + htosa + "/" + mtosa + "/" + hfromsu + "/" + mfromsu + "/" + htosu + "/" + mtosu + "/working/"
                 + working;
 
-
         String result = restTemplate.getForObject(uri, String.class);
         return result;
     }
@@ -2812,7 +2803,6 @@ public class ReportController {
        String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imeis/" + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/" + hfromsa + "/" + mfromsa + "/" + htosa + "/" + mtosa + "/" + hfromsu + "/" + mfromsu + "/" + htosu + "/" + mtosu + "/working/"
                 + working+ "?imeis=" + String.join("&imeis=", teltonikaImeis);;
-
 
         ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
@@ -2893,7 +2883,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto;
 
-
         String result = restTemplate.getForObject(uri, String.class);
         return result;
     }
@@ -2902,7 +2891,6 @@ public class ReportController {
     private Map<String, JsonNode> getGs100Batch(List<String> gs100Imeis, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imeis/from/"+ dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "?imeis=" + String.join("&imeis=", gs100Imeis);
-
 
         ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
@@ -2917,7 +2905,6 @@ public class ReportController {
     private Map<String, JsonNode> getTeltonikaBatch(List<String> teltonikaImeis, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imeis/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "?imeis=" + String.join("&imeis=", teltonikaImeis);
-
 
         ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
@@ -2940,7 +2927,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/speed/max/" + max;
 
-
         String result = restTemplate.getForObject(uri, String.class);
         return result;
     }
@@ -2948,7 +2934,6 @@ public class ReportController {
     private String getTeltonikaSpeedBatch(List<String> teltonikaImeis, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, int max) {
         String  uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imeis/" + "from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/speed/max/" + max + "?imeis=" + String.join("&imeis=", teltonikaImeis);
-
 
         String result = restTemplate.getForObject(uri, String.class);
         return result;
@@ -2961,7 +2946,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/speed/max/" + max;
 
-
         String result = restTemplate.getForObject(uri, String.class);
         return result;
     }
@@ -2969,7 +2953,6 @@ public class ReportController {
     private String getGs100SpeedBatch(List<String> gs100imeis, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, int max) {
         String  uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imeis/" + "from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/speed/max/" + max + "?imeis=" + String.join("&imeis=", gs100imeis);
-
 
         String result = restTemplate.getForObject(uri, String.class);
         return result;
@@ -2986,7 +2969,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/routes?minDistance=" + minDistance;
 
-
         String result = restTemplate.getForObject(uri, String.class);
         return result;
     }
@@ -2994,7 +2976,6 @@ public class ReportController {
     private Map<String, JsonNode> getTeltonikaRouteBatch(List<String> teltonikaImeis, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, Double minDistance) {
         String  uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imeis/" + "from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/routes?minDistance=" + minDistance + "&imeis=" + String.join("&imeis=", teltonikaImeis);
-
 
         ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
@@ -3013,7 +2994,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/routes?minDistance=" + minDistance;
 
-
         String result = restTemplate.getForObject(uri, String.class);
         return result;
     }
@@ -3021,7 +3001,6 @@ public class ReportController {
     private Map<String, JsonNode> getGs100RouteBatch(List<String> teltonikaImeis, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, Double minDistance) {
         String  uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imeis/" + "from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/routes?minDistance=" + minDistance + "&imeis=" + String.join("&imeis=", teltonikaImeis);
-
 
         ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
@@ -3046,7 +3025,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/min/" + min + "/minIdle" + "/" + minIdle + "/idle?isIdle=" + isIdle;
 
-
         String result = restTemplate.getForObject(uri, String.class);
         return result;
     }
@@ -3054,7 +3032,6 @@ public class ReportController {
     private Map<String, JsonNode> getTeltonikaIdleBatch(List<String> teltonikaImeis, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, int min, boolean isIdle, int minIdle) {
         String uri =mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imeis/" + "from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                + mto + "/min/" + min + "/minIdle" + "/" + minIdle + "/idle?isIdle=" + isIdle + "&imeis=" + String.join("&imeis=", teltonikaImeis);
-
 
         ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
@@ -3076,7 +3053,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/min/" + min + "/minIdle" + "/" + minIdle + "/idle?isIdle=" + isIdle;
 
-
         String result = restTemplate.getForObject(uri, String.class);
         return result;
     }
@@ -3084,7 +3060,6 @@ public class ReportController {
     private Map<String, JsonNode> getGs100OIdleBatch(List<String> gs100Imeis, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, int min, boolean isIdle, int minIdle) {
         String uri =mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imeis/" + "from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/min/" + min + "/minIdle" + "/" + minIdle + "/idle?isIdle=" + isIdle + "&imeis=" + String.join("&imeis=", gs100Imeis);
-
 
         ResponseEntity<String> response = restTemplate.getForEntity(uri, String.class);
 
@@ -3107,7 +3082,6 @@ public class ReportController {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/green";
 
-
         try {
             String result = restTemplate.getForObject(uri, String.class);
             return result;
@@ -3122,7 +3096,6 @@ public class ReportController {
     private String getGs100OGreen(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/green";
-
         try {
             String result = restTemplate.getForObject(uri, String.class);
             return result;
@@ -3137,7 +3110,6 @@ public class ReportController {
     private String getTeltonikaTemp(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/teltonika/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/"
                 + mto + "/temp";
-
         try {
             String result = restTemplate.getForObject(uri, String.class);
             return result;
@@ -3152,7 +3124,6 @@ public class ReportController {
     private String getGs100Temp(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto) {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/temp";
-
         try {
             String result = restTemplate.getForObject(uri, String.class);
             return result;
@@ -3175,7 +3146,6 @@ public class ReportController {
         //        System.out.println(event.isContact()+"kontakt ");
         //        System.out.println(event.isLocation()+" lokesn");
 
-
         try {
             String result = restTemplate.postForObject(uri, event, String.class);
             return result;
@@ -3191,7 +3161,6 @@ public class ReportController {
     private String getGs100Event(String imei, String dateFromS, String dateToS, int hfrom, int mfrom, int hto, int mto, Event event) {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/" + hfrom + "/" + mfrom + "/" + hto + "/" + mto
                 + "/event";
-
 
         try {
             String result = restTemplate.postForObject(uri, event, String.class);
@@ -3223,7 +3192,6 @@ public class ReportController {
      */
     private String getGs100FuelSond(String imei, String dateFromS, String dateToS) {
         String uri = mongoServerConfig.getMongoBaseUrl() + "/api/gs100/imei/" + imei + "/from/" + dateFromS + "/to/" + dateToS + "/fuel";
-
         try {
             String result = restTemplate.getForObject(uri, String.class);
             return result;

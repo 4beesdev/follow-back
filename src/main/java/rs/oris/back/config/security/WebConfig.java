@@ -6,6 +6,7 @@ import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 /**
@@ -45,9 +46,20 @@ public class WebConfig {
                 .build();
 
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
-        factory.setConnectTimeout(5000);   // 5s connect timeout
-        factory.setReadTimeout(30000);     // 30s read timeout
+        factory.setConnectTimeout(30_000);   // 30s connect timeout (prod fix 0fb6c61)
+        factory.setReadTimeout(300_000);     // 5min read timeout — slow report downstream calls
 
+        return new RestTemplate(factory);
+    }
+
+    /**
+     * Creates a standalone {@link RestTemplate} with explicit connect/read timeouts
+     * (prod fix 0fb6c61 — used at call sites that build their own RestTemplate).
+     */
+    public static RestTemplate createRestTemplate(int connectTimeout, int readTimeout) {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(connectTimeout);
+        factory.setReadTimeout(readTimeout);
         return new RestTemplate(factory);
     }
 }
