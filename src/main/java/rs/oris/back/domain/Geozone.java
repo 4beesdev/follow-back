@@ -35,6 +35,7 @@ public class Geozone {
     @JsonIgnore
     private Set<GeozoneGeozoneGroup> geozoneGeozoneGroupSet;
     @OneToMany(mappedBy = "geozone")
+    @JsonIgnore
     private Set<VehicleGeozone> vehicleGeozoneSet;
     @OneToMany(mappedBy = "notification")
     @JsonIgnore

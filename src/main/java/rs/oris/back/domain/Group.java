@@ -23,7 +23,7 @@ public class Group {
     @OneToMany(mappedBy = "group", fetch = FetchType.LAZY)
     @JsonIgnore
     private transient Set<User> users;
-    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "group", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private Set<GroupPrivilege> groupPrivilegeSet;
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "firm_id")

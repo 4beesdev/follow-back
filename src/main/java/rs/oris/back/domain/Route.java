@@ -1,5 +1,6 @@
 package rs.oris.back.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import javax.persistence.*;
@@ -22,6 +23,7 @@ public class Route {
     @JoinColumn(name = "firm_id")
     private Firm firm;
     @OneToMany(mappedBy = "route")
+    @JsonIgnore
     private Set<VehicleRoute> vehicleRouteSet;
 
 

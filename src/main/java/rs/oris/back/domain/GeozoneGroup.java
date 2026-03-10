@@ -1,5 +1,7 @@
 package rs.oris.back.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import javax.persistence.*;
 import java.util.Set;
 
@@ -15,6 +17,7 @@ public class GeozoneGroup {
     @JoinColumn(name = "firm_id")
     private Firm firm;
     @OneToMany(mappedBy = "geozoneGroup")
+    @JsonIgnore
     private Set<GeozoneGeozoneGroup> geozoneGeozoneGroupSet;
 
     public GeozoneGroup() {

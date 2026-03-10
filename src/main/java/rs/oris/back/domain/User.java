@@ -41,6 +41,7 @@ public class User implements Serializable {
     @JsonIgnore
     private Set<NotificationVehicle> notificationVehicleSet;
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+    @JsonIgnore
     private Set<UserVehicleGroup> userVehicleGroupSet;
 
 

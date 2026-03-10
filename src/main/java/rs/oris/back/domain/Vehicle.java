@@ -70,6 +70,7 @@ public class Vehicle {
     @JoinColumn(name = "firm_id")
     private Firm firm;
     @OneToMany(mappedBy = "vehicle", fetch = FetchType.LAZY)
+    @JsonIgnore
     private Set<VehicleVehicleGroup> vehicleVehicleGroupSet;
     @Column(name = "device_type")
     private Integer deviceType = 0;
