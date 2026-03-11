@@ -422,9 +422,8 @@ public class VehicleService {
         }
 
         List<String> normalizedImeis = requestedImeis.stream()
-                .filter(Objects::nonNull)
+                .filter(this::isValidReportImei)
                 .map(String::trim)
-                .filter(x -> !x.isEmpty())
                 .distinct()
                 .collect(Collectors.toList());
 
@@ -464,5 +463,22 @@ public class VehicleService {
         }
 
         return vehicleRepository.findAccessibleImeisByUserIdAndImeiIn(user.getUserId(), normalizedImeis);
+    }
+
+    private boolean isValidReportImei(String imei) {
+        if (imei == null) {
+            return false;
+        }
+
+        String normalized = imei.trim();
+        if (normalized.isEmpty()) {
+            return false;
+        }
+
+        String lowerCaseImei = normalized.toLowerCase(Locale.ROOT);
+        return !"/".equals(normalized)
+                && !"null".equals(lowerCaseImei)
+                && !"undefined".equals(lowerCaseImei)
+                && !"n/a".equals(lowerCaseImei);
     }
 }

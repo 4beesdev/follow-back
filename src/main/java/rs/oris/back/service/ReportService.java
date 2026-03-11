@@ -307,6 +307,11 @@ public class ReportService {
                         (element.getModel() == null || element.getModel().isEmpty()) ? element.getManufacturer() : element.getModel()))
                 .collect(Collectors.toList());
 
+        if (mappedList.isEmpty()) {
+            log.warn("Effective working hours payload is empty for requested imeis={}", imeis);
+            return new EffectiveWorkingHoursReport(0L, 0L, Collections.emptyList());
+        }
+
         long nonPositiveEngineSizeCount = mappedList.stream()
                 .filter(element -> element.getEngineSize() <= 0)
                 .count();
@@ -322,7 +327,15 @@ public class ReportService {
         }
 
         //Poziva se metoda na drugom mikroserivsu koja obradjuje dalje
-        return galebRestComunication.getEffectiveWorkingHoursReport(from, to, mappedList, rpm, fuelMargin, emptyingMargin).getBody();
+        ResponseEntity<EffectiveWorkingHoursReport> response = galebRestComunication.getEffectiveWorkingHoursReport(from, to, mappedList, rpm, fuelMargin, emptyingMargin);
+        EffectiveWorkingHoursReport report = response.getBody();
+        if (report == null || report.getReports() == null || report.getReports().isEmpty()) {
+            log.warn("Effective working hours service returned an empty response for imeis={}, from={}, to={}, rpm={}, fuelMargin={}, emptyingMargin={}",
+                    mappedList.stream().map(MonthFuelReportEngineDTO::getImei).collect(Collectors.joining(",")),
+                    from, to, rpm, fuelMargin, emptyingMargin);
+            return new EffectiveWorkingHoursReport(0L, 0L, Collections.emptyList());
+        }
+        return report;
     }
 
     /**
