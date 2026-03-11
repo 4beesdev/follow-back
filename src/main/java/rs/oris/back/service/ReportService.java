@@ -3849,6 +3849,25 @@ public class ReportService {
             textStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             textStyle.setAlignment(HorizontalAlignment.LEFT);
 
+            XSSFFont metaLabelFont = workbook.createFont();
+            metaLabelFont.setBold(true);
+            metaLabelFont.setFontHeightInPoints((short) 10);
+
+            XSSFFont metaValueFont = workbook.createFont();
+            metaValueFont.setFontHeightInPoints((short) 10);
+
+            XSSFCellStyle metaLabelStyle = workbook.createCellStyle();
+            metaLabelStyle.setFont(metaLabelFont);
+            metaLabelStyle.setAlignment(HorizontalAlignment.LEFT);
+            metaLabelStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+            metaLabelStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(220, 223, 227)));
+            metaLabelStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+            XSSFCellStyle metaValueStyle = workbook.createCellStyle();
+            metaValueStyle.setFont(metaValueFont);
+            metaValueStyle.setAlignment(HorizontalAlignment.LEFT);
+            metaValueStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
             //Stil locationStyle
             XSSFCellStyle dateCellStyle2 = workbook.createCellStyle();
             dateCellStyle2.setFillForegroundColor(new XSSFColor(new java.awt.Color(220, 223, 227)));
@@ -3856,6 +3875,25 @@ public class ReportService {
 
             String period = "Od: " + fromS + "  Do: " + toS;
             int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o stajanjima", firmName, period);
+            Row metaRow = sheet.createRow(rowCount++);
+            metaRow.setHeightInPoints(18);
+            metaRow.createCell(0).setCellValue("Minimalno stajanje (min):");
+            metaRow.getCell(0).setCellStyle(metaLabelStyle);
+            metaRow.createCell(1).setCellValue(min);
+            metaRow.getCell(1).setCellStyle(metaValueStyle);
+            sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 1, 3));
+
+            if (showMinIdle) {
+                metaRow = sheet.createRow(rowCount++);
+                metaRow.setHeightInPoints(18);
+                metaRow.createCell(0).setCellValue("Minimalno mirovanje (min):");
+                metaRow.getCell(0).setCellStyle(metaLabelStyle);
+                metaRow.createCell(1).setCellValue(minIdle);
+                metaRow.getCell(1).setCellStyle(metaValueStyle);
+                sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 1, 3));
+            }
+
+            rowCount++;
             int cellCount = 0;
             sheet.setColumnWidth(0, 5000);
             Row row = sheet.createRow(rowCount++);
