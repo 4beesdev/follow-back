@@ -155,7 +155,7 @@ public class XlsExporter {
     }
 
     protected int addWarningMessage(Sheet sheet, int rowIndex) {
-        if (warningMessage == null || warningMessage.isBlank()) {
+        if (warningMessage == null || warningMessage.trim().isEmpty()) {
             return rowIndex;
         }
 

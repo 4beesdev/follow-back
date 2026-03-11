@@ -145,7 +145,7 @@ public class PdfExporter {
     }
 
     protected void addWarningMessage(Document document) throws DocumentException {
-        if (warningMessage == null || warningMessage.isBlank()) {
+        if (warningMessage == null || warningMessage.trim().isEmpty()) {
             return;
         }
 

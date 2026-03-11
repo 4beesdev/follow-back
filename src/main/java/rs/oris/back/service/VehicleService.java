@@ -25,8 +25,8 @@ public class VehicleService {
         private final List<String> invalidImeis;
 
         public ReportImeiFilterResult(List<String> authorizedImeis, List<String> invalidImeis) {
-            this.authorizedImeis = List.copyOf(authorizedImeis);
-            this.invalidImeis = List.copyOf(invalidImeis);
+            this.authorizedImeis = Collections.unmodifiableList(new ArrayList<>(authorizedImeis));
+            this.invalidImeis = Collections.unmodifiableList(new ArrayList<>(invalidImeis));
         }
 
         public List<String> getAuthorizedImeis() {

@@ -1061,7 +1061,7 @@ public class ReportService {
     }
 
     public byte[] routeExport2(List<RouteReport> list, List<String> imeis, List<Vehicle> vehicles, int export, String fromS, String toS, String firmName, String warningMessage) throws Exception {
-        if ((list == null || list.isEmpty()) && (warningMessage == null || warningMessage.isBlank())) {
+        if ((list == null || list.isEmpty()) && (warningMessage == null || warningMessage.trim().isEmpty())) {
             return null;
         }
 
@@ -2112,7 +2112,7 @@ public class ReportService {
         r.getCell(1).setCellStyle(metaValue);
         sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 4));
 
-        if (warningMessage != null && !warningMessage.isBlank()) {
+        if (warningMessage != null && !warningMessage.trim().isEmpty()) {
             XSSFFont warningFont = wb.createFont();
             warningFont.setBold(true);
             warningFont.setFontHeightInPoints((short) 10);
@@ -2281,7 +2281,7 @@ public class ReportService {
         log.info("####################################");
         log.info(LocalDateTime.now() + " - Generisanje izvestaja o predjenom putu za " + ippList.size() + " vozila.");
 
-        if (ippList.size() == 0 && (warningMessage == null || warningMessage.isBlank())) {
+        if (ippList.size() == 0 && (warningMessage == null || warningMessage.trim().isEmpty())) {
             log.info("####################################");
             log.info(LocalDateTime.now() + " - Nema podataka za izvestaj o predjenom putu.");
             return null;
@@ -2531,7 +2531,7 @@ public class ReportService {
             sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 4));
         }
 
-        if (warningMessage != null && !warningMessage.isBlank()) {
+        if (warningMessage != null && !warningMessage.trim().isEmpty()) {
             XSSFFont warningFont = wb.createFont();
             warningFont.setBold(true);
             warningFont.setFontHeightInPoints((short) 10);
@@ -2614,7 +2614,7 @@ public class ReportService {
 
     public byte[] ippmExport(ArrayList<Ippm> ippmArrayList, Timestamp tsFrom, Timestamp tsTo, int export, int working, int hFrom, int mFrom,
             int hTo, int mTo, int hfromsa,int mfromsa,int htosa,int mtosa,int hfromsu,int mfromsu,int htosu,int mtosu, String firmName, String warningMessage) throws Exception {
-        if (ippmArrayList.size() == 0 && (warningMessage == null || warningMessage.isBlank())) {
+        if (ippmArrayList.size() == 0 && (warningMessage == null || warningMessage.trim().isEmpty())) {
             return null;
         }
 
