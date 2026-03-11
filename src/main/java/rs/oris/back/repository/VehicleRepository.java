@@ -42,6 +42,12 @@ public interface VehicleRepository extends JpaRepository<Vehicle, Integer> {
     List<Vehicle> findAllByImeiIn(List<String> imeis);
 
     @Query("SELECT DISTINCT v FROM Vehicle v " +
+           "LEFT JOIN FETCH v.vehicleVehicleGroupSet vvg " +
+           "LEFT JOIN FETCH vvg.vehicleGroup " +
+           "WHERE v.firm.firmId = :firmId AND v.deletedDate IS NULL")
+    List<Vehicle> findWithGroupsByFirmIdAndActive(@Param("firmId") int firmId);
+
+    @Query("SELECT DISTINCT v FROM Vehicle v " +
            "JOIN VehicleVehicleGroup vvg ON vvg.vehicle = v " +
            "JOIN UserVehicleGroup uvg ON uvg.vehicleGroup = vvg.vehicleGroup " +
            "WHERE uvg.user.userId = :userId AND v.deletedDate IS NULL")

@@ -12,6 +12,8 @@ import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.*;
 import rs.oris.back.repository.*;
 
+import rs.oris.back.domain.dto.VehicleWithGroupsDTO;
+
 import java.sql.Timestamp;
 import java.text.DecimalFormat;
 import java.util.*;
@@ -136,51 +138,49 @@ public class VehicleService {
      * @return HashMapa sa vozilima firme
      * @throws Exception
      */
-    public Response<Map<String, List<Vehicle>>> getAllVehicles(User user, int firmId) throws Exception {
+    public Response<Map<String, List<VehicleWithGroupsDTO>>> getAllVehicles(User user, int firmId) throws Exception {
         if (user == null)
             throw new Exception("Bad token");
+
+        List<Vehicle> list;
+        int resolvedFirmId;
+
         if (user.getSuperAdmin() != null && user.getSuperAdmin()) {
             Optional<Firm> optionalFirm = firmRepository.findById(firmId);
             if (!optionalFirm.isPresent()) {
                 throw new Exception("Invalid firm id");
             }
-            List<Vehicle> list = vehicleRepository.findByFirmFirmIdAndDeletedDate(optionalFirm.get().getFirmId(), null);
-
-            Map<String, List<Vehicle>> map = new HashMap<>();
-            map.put("vehicles", list);
-            return new Response<>(map);
+            resolvedFirmId = optionalFirm.get().getFirmId();
+            list = vehicleRepository.findWithGroupsByFirmIdAndActive(resolvedFirmId);
         } else {
             if (user.getFirm() == null)
                 throw new Exception("Firm not set!");
-            List<Vehicle> list = new ArrayList<>();
+            resolvedFirmId = user.getFirm().getFirmId();
+
             if (user.getAdmin() != null && user.getAdmin() == true) {
-                list = vehicleRepository.findByFirmFirmIdAndDeletedDate(user.getFirm().getFirmId(), null);
+                list = vehicleRepository.findWithGroupsByFirmIdAndActive(resolvedFirmId);
             } else {
                 Set<Vehicle> setce = new HashSet<>();
                 for (UserVehicleGroup userVehicleGroup : user.getUserVehicleGroupSet()) {
                     for (VehicleVehicleGroup v : userVehicleGroup.getVehicleGroup().getVehicleVehicleGroupSet()) {
                         Vehicle vehicle = v.getVehicle();
-
-
                         setce.add(vehicle);
                     }
                 }
-
-                list.addAll(setce);
-
-
+                list = new ArrayList<>(setce);
             }
-            DecimalFormat decimalFormat = new DecimalFormat("#.00");
-
-
-            for (Vehicle vehicle : list) {
-                vehicle.setMillage(Double.parseDouble(decimalFormat.format(vehicle.getMillage())));
-                System.out.println(vehicle.getMillage());
-            }
-            Map<String, List<Vehicle>> map = new HashMap<>();
-            map.put("vehicles", list);
-            return new Response<>(map);
         }
+
+        DecimalFormat decimalFormat = new DecimalFormat("#.00");
+        List<VehicleWithGroupsDTO> dtos = new ArrayList<>();
+        for (Vehicle vehicle : list) {
+            vehicle.setMillage(Double.parseDouble(decimalFormat.format(vehicle.getMillage())));
+            dtos.add(VehicleWithGroupsDTO.from(vehicle, vehicle.getVehicleVehicleGroupSet()));
+        }
+
+        Map<String, List<VehicleWithGroupsDTO>> map = new HashMap<>();
+        map.put("vehicles", dtos);
+        return new Response<>(map);
     }
     /**
      * Kreira novo vozilo ako je korisnik admin

@@ -12,6 +12,7 @@ import rs.oris.back.domain.User;
 import rs.oris.back.domain.Vehicle;
 import rs.oris.back.domain.dto.ImeiDTO;
 import rs.oris.back.config.MongoServerConfig;
+import rs.oris.back.domain.dto.VehicleWithGroupsDTO;
 import rs.oris.back.service.NotificationVehicleService;
 import rs.oris.back.service.UserService;
 import rs.oris.back.service.VehicleService;
@@ -38,7 +39,7 @@ public class VehicleController {
      */
     @Transactional
     @GetMapping("/api/firm/{firm_id}/vehicle")
-    public Response<Map<String, List<Vehicle>>> getAllVehicles(@PathVariable("firm_id") int firmId) throws Exception {
+    public Response<Map<String, List<VehicleWithGroupsDTO>>> getAllVehicles(@PathVariable("firm_id") int firmId) throws Exception {
         String username = AuthUtil.getCurrentUsername();
         User user = userService.findByUsername(username);
         return vehicleService.getAllVehicles(user, firmId);
