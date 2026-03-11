@@ -1057,8 +1057,16 @@ public class ReportService {
 
 
     public byte[] routeExport2(List<RouteReport> list, List<String> imeis, List<Vehicle> vehicles, int export, String fromS, String toS, String firmName) throws Exception {
-        if (list == null || list.isEmpty()) {
+        return routeExport2(list, imeis, vehicles, export, fromS, toS, firmName, null);
+    }
+
+    public byte[] routeExport2(List<RouteReport> list, List<String> imeis, List<Vehicle> vehicles, int export, String fromS, String toS, String firmName, String warningMessage) throws Exception {
+        if ((list == null || list.isEmpty()) && (warningMessage == null || warningMessage.isBlank())) {
             return null;
+        }
+
+        if (list == null) {
+            list = new ArrayList<>();
         }
 
 
@@ -1117,7 +1125,7 @@ public class ReportService {
         titleUpperStyle.setWrapText(true);
 
         String period = "Od: " + fromS + "  Do: " + toS;
-        int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o relacijama vozila", firmName, period);
+        int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o relacijama vozila", firmName, period, warningMessage);
         int cellCount = 0;
 
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
@@ -1918,6 +1926,10 @@ public class ReportService {
 
 
     public byte[] speedExport2(List<DTOSpeed> list, List<String> imeis, List<Vehicle> vehicles, int export, String dateF, String dateT, boolean peakSelected, int max, String firmName) throws Exception {
+        return speedExport2(list, imeis, vehicles, export, dateF, dateT, peakSelected, max, firmName, null);
+    }
+
+    public byte[] speedExport2(List<DTOSpeed> list, List<String> imeis, List<Vehicle> vehicles, int export, String dateF, String dateT, boolean peakSelected, int max, String firmName, String warningMessage) throws Exception {
         Map<String, Vehicle> byImei = vehicles.stream()
                 .collect(Collectors.toMap(Vehicle::getImei, v -> v, (a, b) -> a));
 
@@ -2100,6 +2112,25 @@ public class ReportService {
         r.getCell(1).setCellStyle(metaValue);
         sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 4));
 
+        if (warningMessage != null && !warningMessage.isBlank()) {
+            XSSFFont warningFont = wb.createFont();
+            warningFont.setBold(true);
+            warningFont.setFontHeightInPoints((short) 10);
+            warningFont.setColor(IndexedColors.RED.getIndex());
+
+            XSSFCellStyle warningStyle = wb.createCellStyle();
+            warningStyle.setFont(warningFont);
+            warningStyle.setWrapText(true);
+            warningStyle.setAlignment(HorizontalAlignment.LEFT);
+            warningStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+            r = sh.createRow(rIdx++);
+            r.setHeightInPoints(36);
+            r.createCell(0).setCellValue(warningMessage);
+            r.getCell(0).setCellStyle(warningStyle);
+            sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 0, 7));
+        }
+
         // Prazan red
         rIdx++;
 
@@ -2242,11 +2273,15 @@ public class ReportService {
      * @param export =2 znaci vrati pdf, u suprotnom workbook
      */
     public byte[] ippExport(ArrayList<Ipp> ippList, int export, Timestamp dateFromS, Timestamp dateToS, String firmName) throws Exception {
+        return ippExport(ippList, export, dateFromS, dateToS, firmName, null);
+    }
+
+    public byte[] ippExport(ArrayList<Ipp> ippList, int export, Timestamp dateFromS, Timestamp dateToS, String firmName, String warningMessage) throws Exception {
 
         log.info("####################################");
         log.info(LocalDateTime.now() + " - Generisanje izvestaja o predjenom putu za " + ippList.size() + " vozila.");
 
-        if (ippList.size() == 0) {
+        if (ippList.size() == 0 && (warningMessage == null || warningMessage.isBlank())) {
             log.info("####################################");
             log.info(LocalDateTime.now() + " - Nema podataka za izvestaj o predjenom putu.");
             return null;
@@ -2280,7 +2315,7 @@ public class ReportService {
 
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
         String period = "Od: " + df.format(dateFromS) + "  Do: " + df.format(dateToS);
-        int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o pređenom putu", firmName, period);
+        int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o pređenom putu", firmName, period, warningMessage);
         int cellCount = 0;
         Row row = sheet.createRow(rowCount++);
 
@@ -2410,6 +2445,10 @@ public class ReportService {
      * Returns the next available row index.
      */
     private int addExcelReportHeader(XSSFWorkbook wb, XSSFSheet sh, String title, String firmName, String period) {
+        return addExcelReportHeader(wb, sh, title, firmName, period, null);
+    }
+
+    private int addExcelReportHeader(XSSFWorkbook wb, XSSFSheet sh, String title, String firmName, String period, String warningMessage) {
         int rIdx = 0;
         try {
             InputStream logoStream = getClass().getResourceAsStream("/images/oris-logo.png");
@@ -2492,6 +2531,25 @@ public class ReportService {
             sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 1, 4));
         }
 
+        if (warningMessage != null && !warningMessage.isBlank()) {
+            XSSFFont warningFont = wb.createFont();
+            warningFont.setBold(true);
+            warningFont.setFontHeightInPoints((short) 10);
+            warningFont.setColor(IndexedColors.RED.getIndex());
+
+            XSSFCellStyle warningStyle = wb.createCellStyle();
+            warningStyle.setFont(warningFont);
+            warningStyle.setWrapText(true);
+            warningStyle.setAlignment(HorizontalAlignment.LEFT);
+            warningStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+            r = sh.createRow(rIdx++);
+            r.setHeightInPoints(36);
+            r.createCell(0).setCellValue(warningMessage);
+            r.getCell(0).setCellStyle(warningStyle);
+            sh.addMergedRegion(new CellRangeAddress(rIdx - 1, rIdx - 1, 0, 7));
+        }
+
         rIdx++;
         return rIdx;
     }
@@ -2551,7 +2609,12 @@ public class ReportService {
      */
     public byte[] ippmExport(ArrayList<Ippm> ippmArrayList, Timestamp tsFrom, Timestamp tsTo, int export, int working, int hFrom, int mFrom,
             int hTo, int mTo, int hfromsa,int mfromsa,int htosa,int mtosa,int hfromsu,int mfromsu,int htosu,int mtosu, String firmName) throws Exception {
-        if (ippmArrayList.size() == 0) {
+        return ippmExport(ippmArrayList, tsFrom, tsTo, export, working, hFrom, mFrom, hTo, mTo, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu, firmName, null);
+    }
+
+    public byte[] ippmExport(ArrayList<Ippm> ippmArrayList, Timestamp tsFrom, Timestamp tsTo, int export, int working, int hFrom, int mFrom,
+            int hTo, int mTo, int hfromsa,int mfromsa,int htosa,int mtosa,int hfromsu,int mfromsu,int htosu,int mtosu, String firmName, String warningMessage) throws Exception {
+        if (ippmArrayList.size() == 0 && (warningMessage == null || warningMessage.isBlank())) {
             return null;
         }
 
@@ -2594,7 +2657,7 @@ public class ReportService {
 
         SimpleDateFormat df2 = new SimpleDateFormat("dd.MM.yyyy");
         String period = "Od: " + df2.format(tsFrom) + "  Do: " + df2.format(tsTo);
-        int rowCount = addExcelReportHeader(workbook, sheet, "Mesečni izveštaj o pređenom putu", firmName, period);
+        int rowCount = addExcelReportHeader(workbook, sheet, "Mesečni izveštaj o pređenom putu", firmName, period, warningMessage);
         int cellCount = 0;
         Row row;
 
@@ -3808,6 +3871,10 @@ public class ReportService {
      * @throws Exception
      */
     public byte[] standingExport(List<Idle> list, int eid, String fromS, String toS, int min, int minIdle, boolean showMinIdle, String firmName) throws Exception {
+        return standingExport(list, eid, fromS, toS, min, minIdle, showMinIdle, firmName, null);
+    }
+
+    public byte[] standingExport(List<Idle> list, int eid, String fromS, String toS, int min, int minIdle, boolean showMinIdle, String firmName, String warningMessage) throws Exception {
 
         try {
             XSSFWorkbook workbook = new XSSFWorkbook();
@@ -3874,7 +3941,7 @@ public class ReportService {
             //style1.setFillPattern(CellStyle.SOLID_FOREGROUND);
 
             String period = "Od: " + fromS + "  Do: " + toS;
-            int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o stajanjima", firmName, period);
+            int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o stajanjima", firmName, period, warningMessage);
             Row metaRow = sheet.createRow(rowCount++);
             metaRow.setHeightInPoints(18);
             metaRow.createCell(0).setCellValue("Minimalno stajanje (min):");

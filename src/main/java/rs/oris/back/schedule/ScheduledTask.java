@@ -53,6 +53,7 @@ import rs.oris.back.export.xml.impl.MontlyXlsExporter;
 import rs.oris.back.repository.UserReportRepository;
 import rs.oris.back.service.AutomaticReportLoggerService;
 import rs.oris.back.service.ReportService;
+import rs.oris.back.service.VehicleService;
 import rs.oris.back.util.DateUtil;
 
 @Component
@@ -71,6 +72,8 @@ public class ScheduledTask {
 
     @Autowired
     private ReportService reportService;
+    @Autowired
+    private VehicleService vehicleService;
 
     /**
      * automatski se poziva funkcija preko cron vremena prosledjenog u parametru
@@ -327,6 +330,27 @@ public class ScheduledTask {
     //14 Driver Vehicle Relation Report -dvrr
     //15 Driver Driver Relation Report -ddrr
 
+    private String resolvePrimaryImei(UserReport userReport) {
+        String[] imeiArray = userReport.getImei();
+        if (imeiArray == null || imeiArray.length == 0) {
+            return "";
+        }
+
+        try {
+            Integer firmId = userReport.getFirm() != null ? userReport.getFirm().getFirmId() : null;
+            VehicleService.ReportImeiFilterResult imeiFilterResult = vehicleService.filterAccessibleImeisDetailed(
+                    userReport.getUser(),
+                    firmId,
+                    Arrays.asList(imeiArray)
+            );
+            if (!imeiFilterResult.getAuthorizedImeis().isEmpty()) {
+                return imeiFilterResult.getAuthorizedImeis().get(0);
+            }
+        } catch (Exception ignore) {}
+
+        return imeiArray[0];
+    }
+
     private void sendReport(UserReport userReport) throws Exception {
 
         log.info("####################################");
@@ -365,7 +389,7 @@ public class ScheduledTask {
                 String fromString = formatter.format(from);
                 log.info("####################################");
                 log.info(LocalDateTime.now() + " Calling izvestajOPredjenomPutuExport for UserReport ID: " + userReport.getUserReportId());
-                file = reportController.izvestajOPredjenomPutuExport(userReport.getImei()[0], fromString, toString, userReport.getHfrom(),
+                file = reportController.izvestajOPredjenomPutuExport(resolvePrimaryImei(userReport), fromString, toString, userReport.getHfrom(),
                         userReport.getMfrom(), 22, 59, userReport.getFirm().getFirmId(), userReport.getXlsxpdf(), userReport.getImei());
                 log.info("####################################");
                 log.info(LocalDateTime.now() + " Sending email for UserReport ID: " + userReport.getUserReportId());
@@ -394,7 +418,7 @@ public class ScheduledTask {
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
                 String to = formatter.format(lastDateOfPreviousMonth);
                 String from = formatter.format(firstDateOfPreviousMonth);
-                file = reportController.izvestajOPredjenomPutuMesecniExport(userReport.getImei()[0], from, to, userReport.getFirm().getFirmId(), userReport.getXlsxpdf(), userReport.getImei());
+                file = reportController.izvestajOPredjenomPutuMesecniExport(resolvePrimaryImei(userReport), from, to, userReport.getFirm().getFirmId(), userReport.getXlsxpdf(), userReport.getImei());
                 sendMail(userReport, file, true);
                 automaticReportLoggerService.saveSuccessLog("ippm", userReport.getEmail(), userReport.getImei());
                 LoggerFileUtil.logToFile("Uspešno kreiran izveštaj - izvestajOPredjenomPutuMesecni");
@@ -417,7 +441,7 @@ public class ScheduledTask {
                 String to = formatter.format(lastDateOfPreviousMonth);
                 String from = formatter.format(firstDateOfPreviousMonth);
 
-                file = reportController.izvestajOPredjenomPutuTelMesecniVRVExport(userReport.getImei()[0], from, to, userReport.getHfrom(),
+                file = reportController.izvestajOPredjenomPutuTelMesecniVRVExport(resolvePrimaryImei(userReport), from, to, userReport.getHfrom(),
                         userReport.getMfrom(), userReport.getHto(), userReport.getMto(), userReport.getHfromsa(), userReport.getMfromsa(),
                         userReport.getHtosa(), userReport.getMtosa(), userReport.getHfromsu(), userReport.getMfromsu(), userReport.getHtosu(),
                         userReport.getMtosu(), userReport.getFirm().getFirmId(), userReport.getWorking(), userReport.getXlsxpdf(), userReport.getImei());
@@ -600,15 +624,22 @@ public class ScheduledTask {
                 LocalDateTime to = LocalDateTime.now().minusDays(1);
                 LocalDateTime from = to.minusDays(userReport.getPeriod() - 1);
                 List<String> imeis = Arrays.asList(userReport.getImei());
-                List<MonthlyFuelConsumptionReport> monthFuelReport = reportService.getMonthFuelReport(from, to, imeis, userReport.getFuelMargin(),
+                VehicleService.ReportImeiFilterResult imeiFilterResult = vehicleService.filterAccessibleImeisDetailed(
+                        userReport.getUser(),
+                        userReport.getFirm() != null ? userReport.getFirm().getFirmId() : null,
+                        imeis
+                );
+                List<MonthlyFuelConsumptionReport> monthFuelReport = reportService.getMonthFuelReport(from, to, imeiFilterResult.getAuthorizedImeis(), userReport.getFuelMargin(),
                         userReport.getEmptyingMargin());
 
                 if (userReport.getXlsxpdf() == 2) {
                     String fn = userReport.getFirm() != null ? userReport.getFirm().getName() : "";
-                    PdfExporter pdfExporter = new MonthlyReportPdfExporter(from, to, fn);
+                    PdfExporter pdfExporter = new MonthlyReportPdfExporter(from, to, fn)
+                            .withWarningMessage(imeiFilterResult.getWarningMessage());
                     file = pdfExporter.export(monthFuelReport, MonthlyFuelConsumptionReport.class, "Mesecni izvestaj potrosnje goriva");
                 } else {
-                    XlsExporter xlsExporter = new MontlyXlsExporter(from, to);
+                    XlsExporter xlsExporter = new MontlyXlsExporter(from, to)
+                            .withWarningMessage(imeiFilterResult.getWarningMessage());
                     file = xlsExporter.export(monthFuelReport, MonthlyFuelConsumptionReport.class, "Mesecni izvestaj  potrosnje goriva");
 
                 }

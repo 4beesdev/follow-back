@@ -65,6 +65,7 @@ public class MonthlyReportPdfExporter extends PdfExporter {
             Paragraph time = new Paragraph("Od: "+from.format(DateTimeFormatter.ISO_DATE)+"     Do: "+to.format(DateTimeFormatter.ISO_DATE));
             time.setAlignment(Element.ALIGN_CENTER);
             document.add(time);
+            addWarningMessage(document);
 
 
             long count = Arrays.stream(myclass.getDeclaredFields()).filter(field -> field.isAnnotationPresent(PdfTableElement.class)).count();

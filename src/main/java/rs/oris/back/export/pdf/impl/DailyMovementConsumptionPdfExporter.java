@@ -72,6 +72,7 @@ public class DailyMovementConsumptionPdfExporter extends PdfExporter {
             Paragraph time = new Paragraph("Od: "+from.format(dateTimeFormatter)+"  Do: "+to.format(dateTimeFormatter));
             time.setAlignment(Element.ALIGN_CENTER);
             document.add(time);
+            addWarningMessage(document);
 
 
 

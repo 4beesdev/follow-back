@@ -27,6 +27,7 @@ public class PdfExporter {
     protected LocalDateTime to;
     protected LocalDateTime from;
     protected String firmName;
+    protected String warningMessage;
 
     public PdfExporter(LocalDateTime to, LocalDateTime from) {
         this.to = to;
@@ -38,6 +39,11 @@ public class PdfExporter {
         this.to = to;
         this.from = from;
         this.firmName = firmName != null ? firmName : "";
+    }
+
+    public PdfExporter withWarningMessage(String warningMessage) {
+        this.warningMessage = warningMessage;
+        return this;
     }
 
     protected void addReportHeader(Document document) throws DocumentException {
@@ -97,6 +103,7 @@ public class PdfExporter {
             Paragraph time = new Paragraph("Od: "+from.format(DateTimeFormatter.ISO_DATE)+"     Do: "+to.format(DateTimeFormatter.ISO_DATE));
             time.setAlignment(Element.ALIGN_CENTER);
             document.add(time);
+            addWarningMessage(document);
             //Dodaj prazan red
             document.add(new Paragraph("\n"));
 
@@ -135,6 +142,18 @@ public class PdfExporter {
         }
         return outputStream.toByteArray();
 
+    }
+
+    protected void addWarningMessage(Document document) throws DocumentException {
+        if (warningMessage == null || warningMessage.isBlank()) {
+            return;
+        }
+
+        Font warningFont = new Font(Font.HELVETICA, 9, Font.BOLD, Color.RED);
+        Paragraph warning = new Paragraph(warningMessage, warningFont);
+        warning.setSpacingBefore(8f);
+        warning.setAlignment(Element.ALIGN_LEFT);
+        document.add(warning);
     }
 
     //Dodaj red u tabelu

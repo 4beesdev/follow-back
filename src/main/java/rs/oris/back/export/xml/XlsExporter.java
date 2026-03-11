@@ -22,6 +22,13 @@ import static rs.oris.back.util.DateUtil.toSerbianTimeZone;
 import static rs.oris.back.util.DateUtil.toSerbianTimeZoneLocalDate;
 
 public class XlsExporter {
+    protected String warningMessage;
+
+    public XlsExporter withWarningMessage(String warningMessage) {
+        this.warningMessage = warningMessage;
+        return this;
+    }
+
     public <T> byte[] export(List<T> content, Class<T> myclass, String title) {
 
         try (Workbook workbook = new XSSFWorkbook()) {
@@ -145,6 +152,31 @@ public class XlsExporter {
             cell.setCellValue(subtitle);
         }
         sheet.addMergedRegion(new CellRangeAddress(1, 1, 0, 4));
+    }
+
+    protected int addWarningMessage(Sheet sheet, int rowIndex) {
+        if (warningMessage == null || warningMessage.isBlank()) {
+            return rowIndex;
+        }
+
+        Workbook workbook = sheet.getWorkbook();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        font.setColor(IndexedColors.RED.getIndex());
+
+        CellStyle cellStyle = workbook.createCellStyle();
+        cellStyle.setFont(font);
+        cellStyle.setWrapText(true);
+        cellStyle.setAlignment(HorizontalAlignment.LEFT);
+        cellStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+
+        Row warningRow = sheet.createRow(rowIndex++);
+        Cell warningCell = warningRow.createCell(0);
+        warningCell.setCellValue(warningMessage);
+        warningCell.setCellStyle(cellStyle);
+        sheet.addMergedRegion(new CellRangeAddress(warningRow.getRowNum(), warningRow.getRowNum(), 0, 9));
+
+        return rowIndex + 1;
     }
 
     //Formatiraj vreme

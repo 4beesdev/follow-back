@@ -46,8 +46,9 @@ public class DailyMovementConsumptionXlsExporter extends XlsExporter {
             //Postavi vreme
             String subtitle = "Od: " + from.format(dateTimeFormatter) + "  Do: " + to.format(dateTimeFormatter);
             setTitle(sheet, title, subtitle);
+            int row = addWarningMessage(sheet, 2);
             // Create a new row for "Fuel Margin" and "Emptying Fuel Margin"
-            Row marginRow = sheet.createRow(2);  // Create a row at index 2 (third row)
+            Row marginRow = sheet.createRow(row++);
             int marginCellNum = 0;
 
             Cell emptyingFuelMarginCell = marginRow.createCell(marginCellNum);
@@ -71,7 +72,6 @@ public class DailyMovementConsumptionXlsExporter extends XlsExporter {
 
 
             // Create a header row
-            int row = 4;  // Start from the next row after the margin row
             Row headerRow = sheet.createRow(row++);
             int cellNum = 0;
 

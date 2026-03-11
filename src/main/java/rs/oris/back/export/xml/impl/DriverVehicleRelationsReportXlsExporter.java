@@ -45,7 +45,7 @@ public class DriverVehicleRelationsReportXlsExporter extends XlsExporter {
             String subtitle="Od: "+from.format(DateTimeFormatter.ISO_DATE)+"     Do: "+to.format(DateTimeFormatter.ISO_DATE);
             setTitle(sheet,title,subtitle);
             // Create a header row
-            int row=2;
+            int row = addWarningMessage(sheet, 2);
             Row headerRow = sheet.createRow(row++);
             int cellNum = 0;
 

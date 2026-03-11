@@ -20,6 +20,41 @@ import java.util.stream.Collectors;
 @Service
 public class VehicleService {
 
+    public static final class ReportImeiFilterResult {
+        private final List<String> authorizedImeis;
+        private final List<String> invalidImeis;
+
+        public ReportImeiFilterResult(List<String> authorizedImeis, List<String> invalidImeis) {
+            this.authorizedImeis = List.copyOf(authorizedImeis);
+            this.invalidImeis = List.copyOf(invalidImeis);
+        }
+
+        public List<String> getAuthorizedImeis() {
+            return authorizedImeis;
+        }
+
+        public List<String> getInvalidImeis() {
+            return invalidImeis;
+        }
+
+        public boolean hasInvalidImeis() {
+            return !invalidImeis.isEmpty();
+        }
+
+        public String getWarningMessage() {
+            if (!hasInvalidImeis()) {
+                return null;
+            }
+
+            String imeiWord = invalidImeis.size() == 1 ? "vozilo" : "vozila";
+            String values = invalidImeis.stream()
+                    .distinct()
+                    .collect(Collectors.joining(", "));
+            return "Greška: Postoji " + invalidImeis.size() + " " + imeiWord
+                    + " koja nemaju ispravan IMEI. Unete vrednosti su: " + values + ".";
+        }
+    }
+
     @Autowired
     private VehicleRepository vehicleRepository;
     @Autowired
@@ -417,9 +452,18 @@ public class VehicleService {
     }
 
     public List<String> filterAccessibleImeis(User user, Integer firmId, List<String> requestedImeis) throws Exception {
+        return filterAccessibleImeisDetailed(user, firmId, requestedImeis).getAuthorizedImeis();
+    }
+
+    public ReportImeiFilterResult filterAccessibleImeisDetailed(User user, Integer firmId, List<String> requestedImeis) throws Exception {
         if (requestedImeis == null || requestedImeis.isEmpty()) {
-            return Collections.emptyList();
+            return new ReportImeiFilterResult(Collections.emptyList(), Collections.emptyList());
         }
+
+        List<String> invalidImeis = requestedImeis.stream()
+                .map(this::normalizeInvalidReportImeiValue)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
 
         List<String> normalizedImeis = requestedImeis.stream()
                 .filter(this::isValidReportImei)
@@ -428,7 +472,7 @@ public class VehicleService {
                 .collect(Collectors.toList());
 
         if (normalizedImeis.isEmpty()) {
-            return Collections.emptyList();
+            return new ReportImeiFilterResult(Collections.emptyList(), invalidImeis);
         }
 
         if (Boolean.TRUE.equals(user.getSuperAdmin())) {
@@ -438,17 +482,17 @@ public class VehicleService {
                         .map(Vehicle::getImei)
                         .filter(Objects::nonNull)
                         .collect(Collectors.toSet());
-                return normalizedImeis.stream()
+                return new ReportImeiFilterResult(normalizedImeis.stream()
                         .filter(existingImeis::contains)
-                        .collect(Collectors.toList());
+                        .collect(Collectors.toList()), invalidImeis);
             }
             Set<String> firmImeis = vehicleRepository.findByFirmFirmIdAndDeletedDate(firmId, null).stream()
                     .map(Vehicle::getImei)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
-            return normalizedImeis.stream()
+            return new ReportImeiFilterResult(normalizedImeis.stream()
                     .filter(firmImeis::contains)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()), invalidImeis);
         }
 
         if (Boolean.TRUE.equals(user.getAdmin())) {
@@ -457,12 +501,15 @@ public class VehicleService {
                     .map(Vehicle::getImei)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet());
-            return normalizedImeis.stream()
+            return new ReportImeiFilterResult(normalizedImeis.stream()
                     .filter(firmImeis::contains)
-                    .collect(Collectors.toList());
+                    .collect(Collectors.toList()), invalidImeis);
         }
 
-        return vehicleRepository.findAccessibleImeisByUserIdAndImeiIn(user.getUserId(), normalizedImeis);
+        return new ReportImeiFilterResult(
+                vehicleRepository.findAccessibleImeisByUserIdAndImeiIn(user.getUserId(), normalizedImeis),
+                invalidImeis
+        );
     }
 
     private boolean isValidReportImei(String imei) {
@@ -480,5 +527,18 @@ public class VehicleService {
                 && !"null".equals(lowerCaseImei)
                 && !"undefined".equals(lowerCaseImei)
                 && !"n/a".equals(lowerCaseImei);
+    }
+
+    private String normalizeInvalidReportImeiValue(String imei) {
+        if (imei == null) {
+            return "null";
+        }
+
+        String normalized = imei.trim();
+        if (isValidReportImei(normalized)) {
+            return null;
+        }
+
+        return normalized.isEmpty() ? "(prazno)" : normalized;
     }
 }

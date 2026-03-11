@@ -65,8 +65,12 @@ public class ReportsController {
     }
 
     List<String> filterAuthorizedImeis(List<String> imeis) {
+        return filterAuthorizedImeisDetailed(imeis).getAuthorizedImeis();
+    }
+
+    VehicleService.ReportImeiFilterResult filterAuthorizedImeisDetailed(List<String> imeis) {
         try {
-            return vehicleService.filterAccessibleImeis(getCurrentUser(), null, imeis);
+            return vehicleService.filterAccessibleImeisDetailed(getCurrentUser(), null, imeis);
         } catch (Exception e) {
             throw new ForbiddenException("Bad token");
         }
@@ -121,7 +125,8 @@ public class ReportsController {
             Double minDistance
 
     ) {
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         DriverVehicleRelationReport driverVehicleRelationReport = reportsService.getDriverRelationReportByVehicle(from, to, filteredImeis,minDistance);
         return ResponseEntity.ok(driverVehicleRelationReport);
     }
@@ -255,7 +260,8 @@ public class ReportsController {
 
     ) {
 
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         DriverVehicleRelationReport driverVehicleRelationReport = reportsService.getDriverRelationReportByVehicle(from, to, filteredImeis,minDistance);
         Optional<String> optionalRegistration = driverVehicleRelationReport.getReports().stream().filter(x -> x.getRegistration() != null && !x.getRegistration().isEmpty()).findFirst().map(x -> x.getRegistration());
         String registration = optionalRegistration.isPresent() ? optionalRegistration.get() : "";
@@ -265,7 +271,8 @@ public class ReportsController {
 
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new DriverVehicleRelationsReportPdfExporter(from, to, getFirmName(imeis));
+        PdfExporter pdfExporter = new DriverVehicleRelationsReportPdfExporter(from, to, getFirmName(filteredImeis))
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] pdf = pdfExporter.export(driverVehicleRelationReport.getReports(), DriverVehicleRelationReportData.class, "Izveštaj o relacijama vozaca");
 
         ByteArrayResource resource = new ByteArrayResource(pdf);
@@ -295,7 +302,8 @@ public class ReportsController {
             @RequestParam(name="minDistance")
             Double minDistance
     ) {
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         DriverVehicleRelationReport driverRelationsReport = reportsService.getDriverRelationReportByVehicle(from, to, filteredImeis,minDistance);
         Optional<String> optionalRegistration = driverRelationsReport.getReports().stream().filter(x -> x.getRegistration() != null && !x.getRegistration().isEmpty()).findFirst().map(x -> x.getRegistration());
         String registration = optionalRegistration.isPresent() ? optionalRegistration.get() : "";
@@ -304,7 +312,8 @@ public class ReportsController {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
         //Kreiraj xls exporter i obradi podatke
-        XlsExporter xlsExporter = new DriverVehicleRelationsReportXlsExporter(from, to);
+        XlsExporter xlsExporter = new DriverVehicleRelationsReportXlsExporter(from, to)
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] pdf = xlsExporter.export(driverRelationsReport.getReports(), DriverVehicleRelationReportData.class, "Izveštaj o relacijama vozaca");
 
         ByteArrayResource resource = new ByteArrayResource(pdf);
@@ -387,7 +396,8 @@ public class ReportsController {
             Double minDistance
     ) {
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         List<DriverRelationsFuelReport> driverRelationsFuelReport = reportsService.getDriverRelationsFuelReport(from, to, filteredImeis, fuelMargin, emptyingMargin,minDistance);
 
         //Kreiraj hedere za pdf fajl
@@ -419,7 +429,8 @@ public class ReportsController {
 
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new DriverRelationsFuelReportPdfExporter(to, from, getFirmName(imeis));
+        PdfExporter pdfExporter = new DriverRelationsFuelReportPdfExporter(to, from, getFirmName(filteredImeis))
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] pdf = pdfExporter.export(driverRelationsFuelReport, DriverRelationsFuelReport.class, "Izvestaj o relacijama vozila - gorivo");
         ByteArrayResource resource = new ByteArrayResource(pdf);
 
@@ -451,7 +462,8 @@ public class ReportsController {
             Double minDistance
     ) {
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         List<DriverRelationsFuelReport> driverRelationsFuelReport = reportsService.getDriverRelationsFuelReport(from, to, filteredImeis, fuelMargin, emptyingMargin,minDistance);
 
         //Kreiraj hedere za xls fajl
@@ -481,7 +493,8 @@ public class ReportsController {
 //        driverRelationsFuelReport.addAll(reportsCopy);
 ////        //---------------------------------
        //Kreiraj xls exporter i obradi podatke
-        XlsExporter xlsExporter = new DriverRelationsFuelRpoertXLSExporter( from,to);
+        XlsExporter xlsExporter = new DriverRelationsFuelRpoertXLSExporter(from,to)
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] pdf = xlsExporter.export(driverRelationsFuelReport, DriverRelationsFuelReport.class, "Izvestaj o relacijama vozila - gorivo");
         ByteArrayResource resource = new ByteArrayResource(pdf);
 
@@ -508,7 +521,8 @@ public class ReportsController {
             List<String> imeis
     ) {
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         List<SensorActivationReport> sensorActivationReport = reportsService.getSensorActivationReport(from, to, filteredImeis);
         return ResponseEntity.ok(sensorActivationReport);
 
@@ -531,7 +545,8 @@ public class ReportsController {
             List<String> imeis
     ) {
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         List<SensorActivationReport> sensorActivationReport = reportsService.getSensorActivationReport(from, to, filteredImeis);
 
         //Kreiraj hedere za pdf fajl
@@ -543,7 +558,8 @@ public class ReportsController {
         log.info(LocalDateTime.now() + " - Generisanje PDF izvestaja o aktivaciji senzora za period od: " + from + " do: " + to + " za vozila: " + filteredImeis);
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new SensorsReportPdfExporter(to, from, getFirmName(filteredImeis));
+        PdfExporter pdfExporter = new SensorsReportPdfExporter(to, from, getFirmName(filteredImeis))
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] pdf = pdfExporter.export(sensorActivationReport, SensorActivationReport.class, "Izveštaj o aktivaciji senzora");
         ByteArrayResource resource = new ByteArrayResource(pdf);
 
@@ -572,7 +588,8 @@ public class ReportsController {
             List<String> imeis
     ) {
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         List<SensorActivationReport> sensorActivationReport = reportsService.getSensorActivationReport(from, to, filteredImeis);
 
         //Kreiraj hedere za xls fajl
@@ -584,7 +601,8 @@ public class ReportsController {
         log.info(LocalDateTime.now() + " - Generisanje XLS izvestaja o aktivaciji senzora za period od: " + from + " do: " + to + " za vozila: " + filteredImeis);
 
         //Kreiraj xls exporter i obradi podatke
-        XlsExporter xlsExporter = new SensorsReportXlsExporter(from, to);
+        XlsExporter xlsExporter = new SensorsReportXlsExporter(from, to)
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] xls = xlsExporter.export(sensorActivationReport, SensorActivationReport.class, "Izveštaj o aktivaciji senzora");
 
         log.info("####################################");
@@ -619,7 +637,8 @@ public class ReportsController {
             List<String> imeis
     ) {
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         List<MonthlyFuelConsumptionReport> monthFuelReport = reportsService.getMonthFuelReport(from, to, filteredImeis, fuelMargin, emptyingMargin);
 
         //Kreiraj hedere za pdf fajl
@@ -629,7 +648,8 @@ public class ReportsController {
 
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new MonthlyReportPdfExporter(from, to, getFirmName(imeis));
+        PdfExporter pdfExporter = new MonthlyReportPdfExporter(from, to, getFirmName(filteredImeis))
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] pdf = pdfExporter.export(monthFuelReport, MonthlyFuelConsumptionReport.class, "Mesecni izvestaj potrosnje goriva");
 
         ByteArrayResource resource = new ByteArrayResource(pdf);
@@ -661,7 +681,8 @@ public class ReportsController {
             List<String> imeis
     ) {
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         List<MonthlyFuelConsumptionReport> monthFuelReport = reportsService.getMonthFuelReport(from, to, filteredImeis, fuelMargin, emptyingMargin);
 
         //Kreiraj hedere za xls fajl
@@ -671,7 +692,8 @@ public class ReportsController {
 
 
         //Kreiraj xls exporter i obradi podatke
-        XlsExporter xlsExporter = new MontlyXlsExporter(from, to);
+        XlsExporter xlsExporter = new MontlyXlsExporter(from, to)
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] xls = xlsExporter.export(monthFuelReport, MonthlyFuelConsumptionReport.class, "Mesecni izvestaj  potrosnje goriva");
         return ResponseEntity.ok()
                 .headers(headers)
@@ -752,7 +774,8 @@ public class ReportsController {
             Integer fuelMargin
     ) {
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         EffectiveWorkingHoursReport effectiveWorkingHoursReportData = reportsService.getEffectiveWorkingHoursReport(from, to, filteredImeis, rpm, fuelMargin, emptyingMargin);
 
         //Kreiraj hedere za pdf fajl
@@ -769,7 +792,8 @@ public class ReportsController {
 ////        //---------------------------------
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new EffectiveWokringHoursPdfExporter(to, from, getFirmName(imeis));
+        PdfExporter pdfExporter = new EffectiveWokringHoursPdfExporter(to, from, getFirmName(filteredImeis))
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
 
         byte[] pdf = pdfExporter.export(effectiveWorkingHoursReportData.getReports(), EffectiveWorkingHoursReportData.class, "Izvestaj efektivnih radnih sati");
 
@@ -805,7 +829,8 @@ public class ReportsController {
             Integer fuelMargin
     ) {
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         EffectiveWorkingHoursReport monthFuelReport = reportsService.getEffectiveWorkingHoursReport(from, to, filteredImeis, rpm, fuelMargin, emptyingMargin);
 
 
@@ -824,7 +849,8 @@ public class ReportsController {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
         //Kreiraj xls exporter i obradi podatke
-        XlsExporter xlsExporter = new EffectiveWorkingHoursXlsExporter(from, to);
+        XlsExporter xlsExporter = new EffectiveWorkingHoursXlsExporter(from, to)
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] xls = xlsExporter.export(monthFuelReport.getReports(), EffectiveWorkingHoursReportData.class, "Izvestaj efektivnih radnih sati");
         return ResponseEntity.ok()
                 .headers(headers)
@@ -859,7 +885,8 @@ public class ReportsController {
         from = from.with(LocalTime.MIN);
         to   = to.with(LocalTime.of(22, 59));
 
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         List<DailyMovementConsumptionReport> dailyMovementConsumptionReport = reportsService.getDailyMovementConsumptionReport(from, to, filteredImeis, emptyingMargin, fuelMargin);
         return ResponseEntity.ok(dailyMovementConsumptionReport);
     }
@@ -885,7 +912,8 @@ public class ReportsController {
         from=from.with(LocalTime.MIN);
         to = to.with(LocalTime.of(22, 59));
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         List<DailyMovementConsumptionReport> dailyMovementConsumptionReport = reportsService.getDailyMovementConsumptionReport(from, to, filteredImeis, emptyingMargin, fuelMargin);
 
         //promeni datum - u .
@@ -899,7 +927,8 @@ public class ReportsController {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 //
 //        //Kreiraj xls exporter i obradi podatke
-        XlsExporter xlsExporter = new DailyMovementConsumptionXlsExporter(from, to,emptyingMargin,fuelMargin);
+        XlsExporter xlsExporter = new DailyMovementConsumptionXlsExporter(from, to,emptyingMargin,fuelMargin)
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] xls = xlsExporter.export(dailyMovementConsumptionReport, DailyMovementConsumptionReport.class, "Dnevni izvešaj o kretanju i potrošnji goriva");
         ByteArrayResource resource = new ByteArrayResource(xls);
 
@@ -933,7 +962,8 @@ public class ReportsController {
         from=from.with(LocalTime.MIN);
         to = to.with(LocalTime.of(22, 59));
         //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
         List<DailyMovementConsumptionReport> dailyMovementConsumptionReport = reportsService.getDailyMovementConsumptionReport(from, to, filteredImeis, emptyingMargin, fuelMargin);
 
         //promeni datum - u .
@@ -948,7 +978,8 @@ public class ReportsController {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 //
 //        //Kreiraj xls exporter i obradi podatke
-        PdfExporter pdfExporter = new DailyMovementConsumptionPdfExporter(from, to, emptyingMargin, fuelMargin, getFirmName(imeis));
+        PdfExporter pdfExporter = new DailyMovementConsumptionPdfExporter(from, to, emptyingMargin, fuelMargin, getFirmName(filteredImeis))
+                .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] pdf = pdfExporter.export(dailyMovementConsumptionReport, DailyMovementConsumptionReport.class, "Dnevni izvešaj o kretanju i potrošnji goriva");
         ByteArrayResource resource = new ByteArrayResource(pdf);
 

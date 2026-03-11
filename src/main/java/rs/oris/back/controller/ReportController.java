@@ -99,8 +99,24 @@ public class ReportController {
         return vehicleService.filterAccessibleImeis(getCurrentUser(), firmId, imeis);
     }
 
+    VehicleService.ReportImeiFilterResult filterAuthorizedImeisDetailed(int firmId, List<String> imeis) throws Exception {
+        return vehicleService.filterAccessibleImeisDetailed(getCurrentUser(), firmId, imeis);
+    }
+
     List<Vehicle> getAuthorizedVehicles(int firmId, List<String> imeis) throws Exception {
         return vehicleService.findAllByImeiIn(filterAuthorizedImeis(firmId, imeis));
+    }
+
+    private String getFirmNameForImeis(List<String> imeis) {
+        try {
+            if (!imeis.isEmpty()) {
+                Vehicle fv = vehicleService.findByImei(imeis.get(0));
+                if (fv != null && fv.getFirm() != null) {
+                    return fv.getFirm().getName();
+                }
+            }
+        } catch (Exception ignore) {}
+        return "";
     }
 
     @PostMapping("/api/load/days")
@@ -296,7 +312,8 @@ public class ReportController {
     public byte[] izvestajOPredjenomPutuExport(@PathVariable("IMEI") String imei, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS,
             @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto,
             @PathVariable("firm_id") int firmId, @PathVariable("export_id") int export, @RequestBody String[] imeis) throws Exception {
-        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, Arrays.asList(imeis));
+        List<String> authorizedImeis = imeiFilterResult.getAuthorizedImeis();
         log.info("####################################");
         log.info(LocalDateTime.now() + " - Starting ipp export for imeis: " + authorizedImeis);
         ArrayList<Ipp> ippList = new ArrayList<>();
@@ -349,12 +366,8 @@ public class ReportController {
         log.info("####################################");
         log.info(LocalDateTime.now() + " - Generating report for imeis: " + authorizedImeis);
 
-        String firmName = "";
-        try {
-            Vehicle fv = vehicleService.findByImei(imei);
-            if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
-        } catch (Exception ignore) {}
-        return reportService.ippExport(ippList, export, tsFrom, tsTo, firmName);
+        String firmName = getFirmNameForImeis(authorizedImeis);
+        return reportService.ippExport(ippList, export, tsFrom, tsTo, firmName, imeiFilterResult.getWarningMessage());
     }
 
     @PostMapping("api/firm/{firm_id}/report/ipp/imeis/from/{from}/to/{to}/{hfrom}/{mfrom}/{hto}/{mto}/export/{export_id}")
@@ -364,8 +377,8 @@ public class ReportController {
      * @param export =2 vraca pdf, u suprotnom workbook
      */
     public byte[] izvestajOPredjenomPutuExport2(@PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto, @PathVariable("export_id") int export, @RequestBody List<String> imeis) throws Exception {
-
-        ArrayList<Ipp> ippList= (ArrayList<Ipp>) izvestajOPredjenomPutu2(imeis, firmId, dateFromS, dateToS, hfrom, mfrom, hto, mto);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, imeis);
+        ArrayList<Ipp> ippList= (ArrayList<Ipp>) izvestajOPredjenomPutu2(imeiFilterResult.getAuthorizedImeis(), firmId, dateFromS, dateToS, hfrom, mfrom, hto, mto);
 
         Date dateTo = new SimpleDateFormat("yyyy-MM-dd").parse(dateToS);
         Date dateFrom = new SimpleDateFormat("yyyy-MM-dd").parse(dateFromS);
@@ -382,14 +395,8 @@ public class ReportController {
         Timestamp tsFrom = new Timestamp(from);
         Timestamp tsTo = new Timestamp(to);
 
-        String firmName = "";
-        try {
-            if (!imeis.isEmpty()) {
-                Vehicle fv = vehicleService.findByImei(imeis.get(0));
-                if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
-            }
-        } catch (Exception ignore) {}
-        return reportService.ippExport(ippList, export, tsFrom, tsTo, firmName);
+        String firmName = getFirmNameForImeis(imeiFilterResult.getAuthorizedImeis());
+        return reportService.ippExport(ippList, export, tsFrom, tsTo, firmName, imeiFilterResult.getWarningMessage());
     }
 
 
@@ -512,7 +519,8 @@ public class ReportController {
     @PostMapping("api/firm/{firm_id}/report/ippm/imei/{IMEI}/from/{from}/to/{to}/export/{export_id}")//done
     public byte[] izvestajOPredjenomPutuMesecniExport(@PathVariable("IMEI") String imei, @PathVariable("from") String dateFromS,
             @PathVariable("to") String dateToS, @PathVariable("firm_id") int firmId, @PathVariable("export_id") int export, @RequestBody String[] imeis) throws Exception {
-        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, Arrays.asList(imeis));
+        List<String> authorizedImeis = imeiFilterResult.getAuthorizedImeis();
         ArrayList<Ippm> ippmArrayList = new ArrayList<>();
         for (String authorizedImei : authorizedImeis) {
             Vehicle v = vehicleService.findByImei(authorizedImei);
@@ -552,19 +560,15 @@ public class ReportController {
         Timestamp tsFrom = new Timestamp(from);
         Timestamp tsTo = new Timestamp(to);
 
-        String firmName = "";
-        try {
-            Vehicle fv = vehicleService.findByImei(imei);
-            if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
-        } catch (Exception ignore) {}
-        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, firmName);
+        String firmName = getFirmNameForImeis(authorizedImeis);
+        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, firmName, imeiFilterResult.getWarningMessage());
     }
 
 
     @PostMapping("api/firm/{firm_id}/report/ippm/imeis/from/{from}/to/{to}/export/{export_id}")
     public byte[] izvestajOPredjenomPutuMesecniExport2(@RequestBody List<String> imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("export_id") int export) throws Exception {
-
-        ArrayList<Ippm> ippmArrayList= (ArrayList<Ippm>) izvestajOPredjenomPutuMesecni3(imeis, firmId, dateFromS, dateToS);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, imeis);
+        ArrayList<Ippm> ippmArrayList= (ArrayList<Ippm>) izvestajOPredjenomPutuMesecni3(imeiFilterResult.getAuthorizedImeis(), firmId, dateFromS, dateToS);
 
 
         Date dateTo = new SimpleDateFormat("yyyy-MM-dd").parse(dateToS);
@@ -577,14 +581,8 @@ public class ReportController {
         Timestamp tsFrom = new Timestamp(from);
         Timestamp tsTo = new Timestamp(to);
 
-        String firmName = "";
-        try {
-            if (!imeis.isEmpty()) {
-                Vehicle fv = vehicleService.findByImei(imeis.get(0));
-                if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
-            }
-        } catch (Exception ignore) {}
-        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, firmName);
+        String firmName = getFirmNameForImeis(imeiFilterResult.getAuthorizedImeis());
+        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, firmName, imeiFilterResult.getWarningMessage());
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -703,7 +701,8 @@ public class ReportController {
             @PathVariable("hfromsa") int hfromsa, @PathVariable("mfromsa") int mfromsa, @PathVariable("htosa") int htosa, @PathVariable("mtosa") int mtosa,
             @PathVariable("hfromsu") int hfromsu, @PathVariable("mfromsu") int mfromsu, @PathVariable("htosu") int htosu, @PathVariable("mtosu") int mtosu,
             @PathVariable("firm_id") int firmId, @PathVariable("working") int working, @PathVariable("export_id") int export, @RequestBody String[] imeis) throws Exception {
-        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, Arrays.asList(imeis));
+        List<String> authorizedImeis = imeiFilterResult.getAuthorizedImeis();
         ArrayList<Ippm> ippmArrayList = new ArrayList<>();
         for (String authorizedImei : authorizedImeis) {
             Vehicle v = vehicleService.findByImei(authorizedImei);
@@ -751,12 +750,8 @@ public class ReportController {
         Timestamp tsTo = new Timestamp(to);
 
         //{hfromsa}/{mfromsa}/{htosa}/{mtosa}/{hfromsu}/{mfromsu}/{htosu}/{mtosu}
-        String firmName = "";
-        try {
-            Vehicle fv = vehicleService.findByImei(imei);
-            if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
-        } catch (Exception ignore) {}
-        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, working, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu, firmName);
+        String firmName = getFirmNameForImeis(authorizedImeis);
+        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, working, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu, firmName, imeiFilterResult.getWarningMessage());
     }
 
 
@@ -768,8 +763,8 @@ public class ReportController {
                                                             @PathVariable("hfromsa") int hfromsa, @PathVariable("mfromsa") int mfromsa, @PathVariable("htosa") int htosa, @PathVariable("mtosa") int mtosa,
                                                             @PathVariable("hfromsu") int hfromsu, @PathVariable("mfromsu") int mfromsu, @PathVariable("htosu") int htosu, @PathVariable("mtosu") int mtosu,
                                                             @PathVariable("working") int working, @PathVariable("export_id") int export) throws Exception {
-
-        List<Vehicle> vehicles = getAuthorizedVehicles(firmId, imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, imeis);
+        List<Vehicle> vehicles = getAuthorizedVehicles(firmId, imeiFilterResult.getAuthorizedImeis());
 
         for (Vehicle v : vehicles) {
             if (v.getDeviceType() == null) {
@@ -844,7 +839,7 @@ public class ReportController {
 
         //{hfromsa}/{mfromsa}/{htosa}/{mtosa}/{hfromsu}/{mfromsu}/{htosu}/{mtosu}
         String firmName = vehicles.stream().filter(vv -> vv.getFirm() != null).map(vv -> vv.getFirm().getName()).findFirst().orElse("");
-        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, working, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu, firmName);
+        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, working, hfrom, mfrom, hto, mto, hfromsa, mfromsa, htosa, mtosa, hfromsu, mfromsu, htosu, mtosu, firmName, imeiFilterResult.getWarningMessage());
     }
 
 
@@ -1009,7 +1004,8 @@ public class ReportController {
                                                     @PathVariable("max") int max,
                                                     @PathVariable("export_id") int export,
                                                     @RequestParam() boolean peakSelected) throws Exception {
-        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, Arrays.asList(imeis));
+        List<String> authorizedImeis = imeiFilterResult.getAuthorizedImeis();
         List<Vehicle> vehicles = vehicleService.findAllByImeiIn(authorizedImeis);
 
         for (Vehicle v : vehicles) {
@@ -1033,7 +1029,7 @@ public class ReportController {
                 .filter(v -> v.getFirm() != null)
                 .map(v -> v.getFirm().getName())
                 .findFirst().orElse("");
-        return reportService.speedExport2(allData, authorizedImeis, vehicles, export, dateFromS, dateToS, peakSelected, max, firmName);
+        return reportService.speedExport2(allData, authorizedImeis, vehicles, export, dateFromS, dateToS, peakSelected, max, firmName, imeiFilterResult.getWarningMessage());
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1079,7 +1075,8 @@ public class ReportController {
     public byte[] izvestajORelacijamaVozilaExportAutomatski(@RequestBody String[] imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS,
                                                   @PathVariable("hfrom") int hfrom, @PathVariable("mfrom") int mfrom, @PathVariable("hto") int hto, @PathVariable("mto") int mto,
                                                   @RequestParam("minDistance") Double minDistance, @PathVariable("export_id") int export) throws Exception {
-        List<String> authorizedImeis = filterAuthorizedImeis(firmId, Arrays.asList(imeis));
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, Arrays.asList(imeis));
+        List<String> authorizedImeis = imeiFilterResult.getAuthorizedImeis();
         List<Vehicle> vehicles = vehicleService.findAllByImeiIn(authorizedImeis);
 
         ObjectMapper mapper = new ObjectMapper();
@@ -1134,7 +1131,7 @@ public class ReportController {
         }
 
         String firmName = vehicles.stream().filter(vv -> vv.getFirm() != null).map(vv -> vv.getFirm().getName()).findFirst().orElse("");
-        return reportService.routeExport2(results, authorizedImeis, vehicles, export, dateFromS, dateToS, firmName);
+        return reportService.routeExport2(results, authorizedImeis, vehicles, export, dateFromS, dateToS, firmName, imeiFilterResult.getWarningMessage());
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -1269,16 +1266,10 @@ public class ReportController {
             @RequestParam("isIdle") boolean isIdle
     ) throws Exception {
         try {
-            List<Idle> idleList = izvestajOStajanju2(Arrays.asList(imeis), firmId, dateFromS, dateToS, hfrom, mfrom, hto, mto, min, minIdle, isIdle);
-
-            String firmName = "";
-            try {
-                if (imeis.length > 0) {
-                    Vehicle fv = vehicleService.findByImei(imeis[0]);
-                    if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
-                }
-            } catch (Exception ignore) {}
-            return reportService.standingExport(idleList, eid, dateFromS, dateToS, min, minIdle, isIdle, firmName);
+            VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, Arrays.asList(imeis));
+            List<Idle> idleList = izvestajOStajanju2(imeiFilterResult.getAuthorizedImeis(), firmId, dateFromS, dateToS, hfrom, mfrom, hto, mto, min, minIdle, isIdle);
+            String firmName = getFirmNameForImeis(imeiFilterResult.getAuthorizedImeis());
+            return reportService.standingExport(idleList, eid, dateFromS, dateToS, min, minIdle, isIdle, firmName, imeiFilterResult.getWarningMessage());
         }catch (Exception e) {
             throw e;
         }
