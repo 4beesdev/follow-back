@@ -669,7 +669,10 @@ public class ScheduledTask {
                 int rpm = (userReport.getRpm() == null) ? 0 : userReport.getRpm();
                 log.info("####################################");
                 log.info(LocalDateTime.now() + " Calling EffectiveWorkingHours export for UserReport ID: " + userReport.getUserReportId());
-                log.info(LocalDateTime.now() + " Date range - from: " + from + " to: " + to);
+                log.info(LocalDateTime.now() + " Auto EWH params - from: " + from + ", to: " + to + ", imeis: " + imeis
+                        + ", rpm: " + rpm + ", fuelMargin: " + userReport.getFuelMargin()
+                        + ", emptyingMargin: " + userReport.getEmptyingMargin()
+                        + ", format: " + (userReport.getXlsxpdf() == 2 ? "pdf" : "xls"));
                 if (userReport.getXlsxpdf() == 2)
                     file = reportsController.exportEffectiveWorkingHoursInPdf(from, to, imeis, userReport.getEmptyingMargin(), rpm, userReport.getFuelMargin())
                             .getBody().getByteArray();
@@ -677,6 +680,8 @@ public class ScheduledTask {
                     file = reportsController.exportEffectiveWorkingHoursInXls(from, to, imeis, userReport.getEmptyingMargin(), rpm, userReport.getFuelMargin())
                             .getBody();
 
+                log.info(LocalDateTime.now() + " Auto EWH export finished for UserReport ID: " + userReport.getUserReportId()
+                        + ", attachmentBytes=" + (file == null ? "null" : file.length));
                 sendMail(userReport, file, false);
                 automaticReportLoggerService.saveSuccessLog("ewh", userReport.getEmail(), userReport.getImei());
                 LoggerFileUtil.logToFile("Uspešno kreiran izveštaj - EffectiveWorkingHours");

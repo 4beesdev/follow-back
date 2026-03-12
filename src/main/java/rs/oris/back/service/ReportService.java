@@ -299,6 +299,9 @@ public class ReportService {
         //Pronadji vozila iz postgres baze po imei polju
         List<ReportEngineProjection> byImeiIn = vehicleRepository.findByImeiIn(imeis);
 
+        log.info("Effective working hours metadata lookup: requestedImeis={}, resolvedVehicleCount={}, from={}, to={}, rpm={}, fuelMargin={}, emptyingMargin={}",
+                imeis, byImeiIn.size(), from, to, rpm, fuelMargin, emptyingMargin);
+
         //Mapiranje podataka u  DriverRelationVehicleRoutingInfo
         List<MonthFuelReportEngineDTO> mappedList = byImeiIn.stream().map(element -> new MonthFuelReportEngineDTO(
                         element.getImei(),
@@ -308,7 +311,7 @@ public class ReportService {
                 .collect(Collectors.toList());
 
         if (mappedList.isEmpty()) {
-            log.warn("Effective working hours payload is empty for requested imeis={}", imeis);
+            log.warn("Effective working hours payload is empty because no vehicle metadata was found for requested imeis={}", imeis);
             return new EffectiveWorkingHoursReport(0L, 0L, Collections.emptyList());
         }
 
@@ -330,11 +333,15 @@ public class ReportService {
         ResponseEntity<EffectiveWorkingHoursReport> response = galebRestComunication.getEffectiveWorkingHoursReport(from, to, mappedList, rpm, fuelMargin, emptyingMargin);
         EffectiveWorkingHoursReport report = response.getBody();
         if (report == null || report.getReports() == null || report.getReports().isEmpty()) {
-            log.warn("Effective working hours service returned an empty response for imeis={}, from={}, to={}, rpm={}, fuelMargin={}, emptyingMargin={}",
+            log.warn("Effective working hours service returned an empty response for imeis={}, from={}, to={}, rpm={}, fuelMargin={}, emptyingMargin={}. This will produce an empty report/export.",
                     mappedList.stream().map(MonthFuelReportEngineDTO::getImei).collect(Collectors.joining(",")),
                     from, to, rpm, fuelMargin, emptyingMargin);
             return new EffectiveWorkingHoursReport(0L, 0L, Collections.emptyList());
         }
+        log.info("Effective working hours service returned {} report rows for imeis={}, from={}, to={}, rpm={}, fuelMargin={}, emptyingMargin={}",
+                report.getReports().size(),
+                mappedList.stream().map(MonthFuelReportEngineDTO::getImei).collect(Collectors.joining(",")),
+                from, to, rpm, fuelMargin, emptyingMargin);
         return report;
     }
 

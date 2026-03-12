@@ -84,6 +84,46 @@ public class ReportsController {
         return authorizedImeis.get(0);
     }
 
+    private void logEffectiveWorkingHoursFilterResult(String endpoint,
+                                                      List<String> requestedImeis,
+                                                      VehicleService.ReportImeiFilterResult imeiFilterResult,
+                                                      LocalDateTime from,
+                                                      LocalDateTime to,
+                                                      Integer rpm,
+                                                      Integer fuelMargin,
+                                                      Integer emptyingMargin) {
+        List<String> authorizedImeis = imeiFilterResult.getAuthorizedImeis();
+        List<String> invalidImeis = imeiFilterResult.getInvalidImeis();
+        log.info("EWH [{}] request summary: requestedImeis={}, authorizedImeis={}, invalidImeis={}, from={}, to={}, rpm={}, fuelMargin={}, emptyingMargin={}",
+                endpoint, requestedImeis, authorizedImeis, invalidImeis, from, to, rpm, fuelMargin, emptyingMargin);
+
+        if (authorizedImeis.isEmpty()) {
+            log.warn("EWH [{}] has no authorized IMEIs after filtering. requestedImeis={}, invalidImeis={}",
+                    endpoint, requestedImeis, invalidImeis);
+        }
+    }
+
+    private void logEffectiveWorkingHoursResult(String endpoint,
+                                                String responseType,
+                                                EffectiveWorkingHoursReport report,
+                                                List<String> authorizedImeis,
+                                                List<String> invalidImeis,
+                                                LocalDateTime from,
+                                                LocalDateTime to,
+                                                Integer rpm,
+                                                Integer fuelMargin,
+                                                Integer emptyingMargin) {
+        int rowCount = report == null || report.getReports() == null ? 0 : report.getReports().size();
+        if (rowCount == 0) {
+            log.warn("EWH [{}] will return an empty {}. authorizedImeis={}, invalidImeis={}, from={}, to={}, rpm={}, fuelMargin={}, emptyingMargin={}",
+                    endpoint, responseType, authorizedImeis, invalidImeis, from, to, rpm, fuelMargin, emptyingMargin);
+            return;
+        }
+
+        log.info("EWH [{}] produced {} report rows for {}. authorizedImeis={}, invalidImeis={}, from={}, to={}, rpm={}, fuelMargin={}, emptyingMargin={}",
+                endpoint, rowCount, responseType, authorizedImeis, invalidImeis, from, to, rpm, fuelMargin, emptyingMargin);
+    }
+
     private String getFirmName(List<String> imeis) {
         try {
             List<Vehicle> vehicles = vehicleService.findAllByImeiIn(imeis);
@@ -745,9 +785,11 @@ public class ReportsController {
             @RequestParam(name = "rpm")
             Integer rpm
     ) {
-        //Pozovi servisnu metodu
-        List<String> filteredImeis = filterAuthorizedImeis(imeis);
+        VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
+        List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
+        logEffectiveWorkingHoursFilterResult("json", imeis, imeiFilterResult, from, to, rpm, fuelMargin, emptyingMargin);
         EffectiveWorkingHoursReport monthFuelReport = reportsService.getEffectiveWorkingHoursReport(from, to, filteredImeis, rpm, fuelMargin,emptyingMargin);
+        logEffectiveWorkingHoursResult("json", "json response", monthFuelReport, filteredImeis, imeiFilterResult.getInvalidImeis(), from, to, rpm, fuelMargin, emptyingMargin);
         return ResponseEntity.ok(monthFuelReport);
     }
 
@@ -776,7 +818,9 @@ public class ReportsController {
         //Pozovi servisnu metodu
         VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
         List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
+        logEffectiveWorkingHoursFilterResult("pdf", imeis, imeiFilterResult, from, to, rpm, fuelMargin, emptyingMargin);
         EffectiveWorkingHoursReport effectiveWorkingHoursReportData = reportsService.getEffectiveWorkingHoursReport(from, to, filteredImeis, rpm, fuelMargin, emptyingMargin);
+        logEffectiveWorkingHoursResult("pdf", "PDF export", effectiveWorkingHoursReportData, filteredImeis, imeiFilterResult.getInvalidImeis(), from, to, rpm, fuelMargin, emptyingMargin);
 
         //Kreiraj hedere za pdf fajl
         HttpHeaders headers = new HttpHeaders();
@@ -831,7 +875,9 @@ public class ReportsController {
         //Pozovi servisnu metodu
         VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(imeis);
         List<String> filteredImeis = imeiFilterResult.getAuthorizedImeis();
+        logEffectiveWorkingHoursFilterResult("xls", imeis, imeiFilterResult, from, to, rpm, fuelMargin, emptyingMargin);
         EffectiveWorkingHoursReport monthFuelReport = reportsService.getEffectiveWorkingHoursReport(from, to, filteredImeis, rpm, fuelMargin, emptyingMargin);
+        logEffectiveWorkingHoursResult("xls", "XLS export", monthFuelReport, filteredImeis, imeiFilterResult.getInvalidImeis(), from, to, rpm, fuelMargin, emptyingMargin);
 
 
 ////        //for testing
