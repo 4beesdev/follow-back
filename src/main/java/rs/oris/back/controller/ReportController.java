@@ -51,6 +51,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -117,6 +118,26 @@ public class ReportController {
             }
         } catch (Exception ignore) {}
         return "";
+    }
+
+    private String getIppmExportFilename(String dateFromS, int export) {
+        LocalDate reportMonth = LocalDate.parse(dateFromS);
+        String extension = export == 2 ? ".pdf" : ".xlsx";
+        return "PredjeniPutMesecni-" + reportMonth.format(DateTimeFormatter.ofPattern("MM.yyyy")) + extension;
+    }
+
+    private ResponseEntity<byte[]> buildIppmExportResponse(byte[] file, String dateFromS, int export) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + getIppmExportFilename(dateFromS, export) + "\"");
+        MediaType mediaType = export == 2
+                ? MediaType.APPLICATION_PDF
+                : MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .contentLength(file.length)
+                .contentType(mediaType)
+                .body(file);
     }
 
     @PostMapping("/api/load/days")
@@ -517,7 +538,7 @@ public class ReportController {
      * @throws Exception
      */
     @PostMapping("api/firm/{firm_id}/report/ippm/imei/{IMEI}/from/{from}/to/{to}/export/{export_id}")//done
-    public byte[] izvestajOPredjenomPutuMesecniExport(@PathVariable("IMEI") String imei, @PathVariable("from") String dateFromS,
+    public ResponseEntity<byte[]> izvestajOPredjenomPutuMesecniExport(@PathVariable("IMEI") String imei, @PathVariable("from") String dateFromS,
             @PathVariable("to") String dateToS, @PathVariable("firm_id") int firmId, @PathVariable("export_id") int export, @RequestBody String[] imeis) throws Exception {
         VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, Arrays.asList(imeis));
         List<String> authorizedImeis = imeiFilterResult.getAuthorizedImeis();
@@ -561,12 +582,13 @@ public class ReportController {
         Timestamp tsTo = new Timestamp(to);
 
         String firmName = getFirmNameForImeis(authorizedImeis);
-        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, firmName, imeiFilterResult.getWarningMessage());
+        byte[] file = reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, firmName, imeiFilterResult.getWarningMessage());
+        return buildIppmExportResponse(file, dateFromS, export);
     }
 
 
     @PostMapping("api/firm/{firm_id}/report/ippm/imeis/from/{from}/to/{to}/export/{export_id}")
-    public byte[] izvestajOPredjenomPutuMesecniExport2(@RequestBody List<String> imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("export_id") int export) throws Exception {
+    public ResponseEntity<byte[]> izvestajOPredjenomPutuMesecniExport2(@RequestBody List<String> imeis, @PathVariable("firm_id") int firmId, @PathVariable("from") String dateFromS, @PathVariable("to") String dateToS, @PathVariable("export_id") int export) throws Exception {
         VehicleService.ReportImeiFilterResult imeiFilterResult = filterAuthorizedImeisDetailed(firmId, imeis);
         ArrayList<Ippm> ippmArrayList= (ArrayList<Ippm>) izvestajOPredjenomPutuMesecni3(imeiFilterResult.getAuthorizedImeis(), firmId, dateFromS, dateToS);
 
@@ -582,7 +604,8 @@ public class ReportController {
         Timestamp tsTo = new Timestamp(to);
 
         String firmName = getFirmNameForImeis(imeiFilterResult.getAuthorizedImeis());
-        return reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, firmName, imeiFilterResult.getWarningMessage());
+        byte[] file = reportService.ippmExport(ippmArrayList, tsFrom, tsTo, export, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, firmName, imeiFilterResult.getWarningMessage());
+        return buildIppmExportResponse(file, dateFromS, export);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -351,6 +351,11 @@ public class ScheduledTask {
         return imeiArray[0];
     }
 
+    private String getIppmMonthlyAttachmentName(int xlsxpdf) {
+        String monthYear = LocalDate.now().minusMonths(1).format(DateTimeFormatter.ofPattern("MM.yyyy"));
+        return "PredjeniPutMesecni-" + monthYear + (xlsxpdf == 2 ? ".pdf" : ".xlsx");
+    }
+
     private void sendReport(UserReport userReport) throws Exception {
 
         log.info("####################################");
@@ -418,7 +423,7 @@ public class ScheduledTask {
                 SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
                 String to = formatter.format(lastDateOfPreviousMonth);
                 String from = formatter.format(firstDateOfPreviousMonth);
-                file = reportController.izvestajOPredjenomPutuMesecniExport(resolvePrimaryImei(userReport), from, to, userReport.getFirm().getFirmId(), userReport.getXlsxpdf(), userReport.getImei());
+                file = reportController.izvestajOPredjenomPutuMesecniExport(resolvePrimaryImei(userReport), from, to, userReport.getFirm().getFirmId(), userReport.getXlsxpdf(), userReport.getImei()).getBody();
                 sendMail(userReport, file, true);
                 automaticReportLoggerService.saveSuccessLog("ippm", userReport.getEmail(), userReport.getImei());
                 LoggerFileUtil.logToFile("Uspešno kreiran izveštaj - izvestajOPredjenomPutuMesecni");
@@ -871,9 +876,9 @@ public class ScheduledTask {
         case 2:
             msg.setSubject("Mesešni izveštaj o pređenom putu - ORIS");
             if (userReport.getXlsxpdf() == 2) {
-                mbp2.setFileName("PredjeniPutMesecni" + dateStr + ".pdf");
+                mbp2.setFileName(getIppmMonthlyAttachmentName(userReport.getXlsxpdf()));
             } else {
-                mbp2.setFileName("PredjeniPutMesecni" + dateStr + ".xlsx");
+                mbp2.setFileName(getIppmMonthlyAttachmentName(userReport.getXlsxpdf()));
             }
             break;
         case 3:
