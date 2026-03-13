@@ -16,10 +16,12 @@ import java.util.stream.Collectors;
 public class EffectiveWorkingHoursXlsExporter extends XlsExporter {
     private LocalDateTime from;
     private LocalDateTime to;
+    private Integer rpm;
 
-    public EffectiveWorkingHoursXlsExporter(LocalDateTime from, LocalDateTime to) {
+    public EffectiveWorkingHoursXlsExporter(LocalDateTime from, LocalDateTime to, Integer rpm) {
         this.from=from;
         this.to=to;
+        this.rpm = rpm;
     }
 
 
@@ -38,11 +40,12 @@ public class EffectiveWorkingHoursXlsExporter extends XlsExporter {
             //Kreiraj sheet1
             Sheet sheet = workbook.createSheet("Sheet1");
 
-            //Postavi vreme
-            String subtitle="Od: "+from.format(DateTimeFormatter.ISO_DATE)+"     Do: "+to.format(DateTimeFormatter.ISO_DATE);
-            setTitle(sheet,title,subtitle);
+            //Postavi naslov i dodatne meta podatke ispod naslova
+            setTitle(sheet,title,"Broj obrtaja: " + rpm);
+            Row dateRow = sheet.createRow(2);
+            dateRow.createCell(0).setCellValue("Od: "+from.format(DateTimeFormatter.ISO_DATE)+"     Do: "+to.format(DateTimeFormatter.ISO_DATE));
             // Create a header row
-            int row = addWarningMessage(sheet, 2);
+            int row = addWarningMessage(sheet, 3);
             Row headerRow = sheet.createRow(row++);
             int cellNum = 0;
 

@@ -25,17 +25,20 @@ import java.util.stream.Collectors;
 public class EffectiveWokringHoursPdfExporter extends PdfExporter {
     private LocalDateTime to;
     private LocalDateTime from;
+    private Integer rpm;
 
-    public EffectiveWokringHoursPdfExporter(LocalDateTime to, LocalDateTime from) {
+    public EffectiveWokringHoursPdfExporter(LocalDateTime to, LocalDateTime from, Integer rpm) {
         super(to, from);
         this.to=to;
        this.from=from;
+       this.rpm = rpm;
     }
 
-    public EffectiveWokringHoursPdfExporter(LocalDateTime to, LocalDateTime from, String firmName) {
+    public EffectiveWokringHoursPdfExporter(LocalDateTime to, LocalDateTime from, Integer rpm, String firmName) {
         super(to, from, firmName);
         this.to=to;
         this.from=from;
+        this.rpm = rpm;
     }
 
 
@@ -63,6 +66,10 @@ public class EffectiveWokringHoursPdfExporter extends PdfExporter {
             Paragraph titleP = new Paragraph(title);
             titleP.setAlignment(Element.ALIGN_CENTER);
             document.add(titleP);
+
+            Paragraph rpmParagraph = new Paragraph("Broj obrtaja: " + rpm);
+            rpmParagraph.setAlignment(Element.ALIGN_CENTER);
+            document.add(rpmParagraph);
 
             //Dodaj vreme izvestaja
             Paragraph time = new Paragraph("Od: "+from.format(DateTimeFormatter.ISO_DATE)+"     Do: "+to.format(DateTimeFormatter.ISO_DATE));

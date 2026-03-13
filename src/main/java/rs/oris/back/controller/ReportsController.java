@@ -836,7 +836,7 @@ public class ReportsController {
 ////        //---------------------------------
 
         //Kreiraj pdf exporter i obradi podatke
-        PdfExporter pdfExporter = new EffectiveWokringHoursPdfExporter(to, from, getFirmName(filteredImeis))
+        PdfExporter pdfExporter = new EffectiveWokringHoursPdfExporter(to, from, rpm, getFirmName(filteredImeis))
                 .withWarningMessage(imeiFilterResult.getWarningMessage());
 
         byte[] pdf = pdfExporter.export(effectiveWorkingHoursReportData.getReports(), EffectiveWorkingHoursReportData.class, "Izvestaj efektivnih radnih sati");
@@ -895,7 +895,7 @@ public class ReportsController {
         headers.add(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE);
 
         //Kreiraj xls exporter i obradi podatke
-        XlsExporter xlsExporter = new EffectiveWorkingHoursXlsExporter(from, to)
+        XlsExporter xlsExporter = new EffectiveWorkingHoursXlsExporter(from, to, rpm)
                 .withWarningMessage(imeiFilterResult.getWarningMessage());
         byte[] xls = xlsExporter.export(monthFuelReport.getReports(), EffectiveWorkingHoursReportData.class, "Izvestaj efektivnih radnih sati");
         return ResponseEntity.ok()
