@@ -31,6 +31,7 @@ import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
 import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFDrawing;
 import org.apache.poi.xssf.usermodel.XSSFFont;
+import org.apache.poi.xssf.usermodel.XSSFRichTextString;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.slf4j.Logger;
@@ -3952,26 +3953,24 @@ public class ReportService {
             int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o stajanjima", firmName, period, warningMessage);
             Row metaRow = sheet.createRow(rowCount++);
             metaRow.setHeightInPoints(18);
-            metaRow.createCell(0).setCellValue("Minimalno stajanje:");
+            XSSFRichTextString minStandingText = new XSSFRichTextString("Minimalno stajanje: " + min);
+            minStandingText.applyFont(0, "Minimalno stajanje:".length(), metaLabelFont);
+            minStandingText.applyFont("Minimalno stajanje:".length(), minStandingText.length(), metaValueFont);
+            metaRow.createCell(0).setCellValue(minStandingText);
             metaRow.getCell(0).setCellStyle(metaLabelStyle);
             metaRow.createCell(1).setCellStyle(metaLabelStyle);
             sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 0, 1));
-            metaRow.createCell(2).setCellValue(min);
-            metaRow.getCell(2).setCellStyle(metaValueStyle);
-            metaRow.createCell(3).setCellStyle(metaValueStyle);
-            sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 2, 3));
 
             if (showMinIdle) {
                 metaRow = sheet.createRow(rowCount++);
                 metaRow.setHeightInPoints(18);
-                metaRow.createCell(0).setCellValue("Minimalno mirovanje:");
+                XSSFRichTextString minIdleText = new XSSFRichTextString("Minimalno mirovanje: " + minIdle);
+                minIdleText.applyFont(0, "Minimalno mirovanje:".length(), metaLabelFont);
+                minIdleText.applyFont("Minimalno mirovanje:".length(), minIdleText.length(), metaValueFont);
+                metaRow.createCell(0).setCellValue(minIdleText);
                 metaRow.getCell(0).setCellStyle(metaLabelStyle);
                 metaRow.createCell(1).setCellStyle(metaLabelStyle);
                 sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 0, 1));
-                metaRow.createCell(2).setCellValue(minIdle);
-                metaRow.getCell(2).setCellStyle(metaValueStyle);
-                metaRow.createCell(3).setCellStyle(metaValueStyle);
-                sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 2, 3));
             }
 
             rowCount++;
