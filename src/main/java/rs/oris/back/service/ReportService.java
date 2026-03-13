@@ -3952,7 +3952,7 @@ public class ReportService {
             int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o stajanjima", firmName, period, warningMessage);
             Row metaRow = sheet.createRow(rowCount++);
             metaRow.setHeightInPoints(18);
-            metaRow.createCell(0).setCellValue("Minimalno stajanje (min):");
+            metaRow.createCell(0).setCellValue("Minimalno stajanje:");
             metaRow.getCell(0).setCellStyle(metaLabelStyle);
             metaRow.createCell(1).setCellStyle(metaLabelStyle);
             sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 0, 1));
@@ -3964,7 +3964,7 @@ public class ReportService {
             if (showMinIdle) {
                 metaRow = sheet.createRow(rowCount++);
                 metaRow.setHeightInPoints(18);
-                metaRow.createCell(0).setCellValue("Minimalno mirovanje (min):");
+                metaRow.createCell(0).setCellValue("Minimalno mirovanje:");
                 metaRow.getCell(0).setCellStyle(metaLabelStyle);
                 metaRow.createCell(1).setCellStyle(metaLabelStyle);
                 sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 0, 1));
