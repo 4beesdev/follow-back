@@ -3936,6 +3936,7 @@ public class ReportService {
             metaLabelStyle.setVerticalAlignment(VerticalAlignment.CENTER);
             metaLabelStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(220, 223, 227)));
             metaLabelStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            metaLabelStyle.setWrapText(true);
 
             XSSFCellStyle metaValueStyle = workbook.createCellStyle();
             metaValueStyle.setFont(metaValueFont);
@@ -3953,18 +3954,24 @@ public class ReportService {
             metaRow.setHeightInPoints(18);
             metaRow.createCell(0).setCellValue("Minimalno stajanje (min):");
             metaRow.getCell(0).setCellStyle(metaLabelStyle);
-            metaRow.createCell(1).setCellValue(min);
-            metaRow.getCell(1).setCellStyle(metaValueStyle);
-            sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 1, 3));
+            metaRow.createCell(1).setCellStyle(metaLabelStyle);
+            sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 0, 1));
+            metaRow.createCell(2).setCellValue(min);
+            metaRow.getCell(2).setCellStyle(metaValueStyle);
+            metaRow.createCell(3).setCellStyle(metaValueStyle);
+            sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 2, 3));
 
             if (showMinIdle) {
                 metaRow = sheet.createRow(rowCount++);
                 metaRow.setHeightInPoints(18);
                 metaRow.createCell(0).setCellValue("Minimalno mirovanje (min):");
                 metaRow.getCell(0).setCellStyle(metaLabelStyle);
-                metaRow.createCell(1).setCellValue(minIdle);
-                metaRow.getCell(1).setCellStyle(metaValueStyle);
-                sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 1, 3));
+                metaRow.createCell(1).setCellStyle(metaLabelStyle);
+                sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 0, 1));
+                metaRow.createCell(2).setCellValue(minIdle);
+                metaRow.getCell(2).setCellStyle(metaValueStyle);
+                metaRow.createCell(3).setCellStyle(metaValueStyle);
+                sheet.addMergedRegion(new CellRangeAddress(rowCount - 1, rowCount - 1, 2, 3));
             }
 
             rowCount++;
