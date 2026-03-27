@@ -1,11 +1,14 @@
 package rs.oris.back.controller;
 
+import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.web.bind.annotation.*;
 import rs.oris.back.domain.PN;
+import rs.oris.back.domain.User;
 import rs.oris.back.service.PNService;
 import rs.oris.back.controller.wrapper.Response;
+import rs.oris.back.service.UserService;
 
 
 import java.util.List;
@@ -15,6 +18,8 @@ public class PNController {
 
     @Autowired
     private PNService pNService;
+    @Autowired
+    private UserService userService;
 
     /**
      *
@@ -68,8 +73,16 @@ public class PNController {
      * create/save
      */
     @PostMapping("/api/firm/{firm_id}/vehicle/{vehicle_id}/driver/{driver_id}/pn")
-    public Response<PN> addPN(@RequestBody PN pN,@PathVariable("driver_id") int driverId,@PathVariable("vehicle_id") int vehicleId) throws Exception{
-        return pNService.createPN(pN,vehicleId,driverId);
+    public Response<PN> addPN(@RequestBody PN pN, @RequestHeader("Authorization") String auth, @PathVariable("driver_id") int driverId, @PathVariable("vehicle_id") int vehicleId) throws Exception{
+        return pNService.createPN(pN, vehicleId, driverId, getCurrentUser(auth));
+    }
+
+    private User getCurrentUser(String auth) throws Exception {
+        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
+        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
+        String decodedJson = new String(byteArray);
+        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+        return userService.findByUsername(username);
     }
 
 }

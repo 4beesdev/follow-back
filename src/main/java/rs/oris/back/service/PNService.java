@@ -8,6 +8,7 @@ import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.Driver;
 import rs.oris.back.domain.FirmPnCounter;
 import rs.oris.back.domain.PN;
+import rs.oris.back.domain.User;
 import rs.oris.back.domain.Vehicle;
 import rs.oris.back.repository.DriverRepository;
 import rs.oris.back.repository.FirmPnCounterRepository;
@@ -28,6 +29,8 @@ public class PNService {
     private VehicleRepository vehicleRepository;
     @Autowired
     private FirmPnCounterRepository firmPnCounterRepository;
+    @Autowired
+    private UserPnDefaultsService userPnDefaultsService;
 
     /**
      *
@@ -56,7 +59,7 @@ public class PNService {
      * create/save
      */
     @Transactional
-	public Response<PN> createPN(PN pN, int vehicleId, int driverId) throws Exception {
+	public Response<PN> createPN(PN pN, int vehicleId, int driverId, User currentUser) throws Exception {
         Optional<Vehicle> optionalVehicle = vehicleRepository.findById(vehicleId);
         if (!optionalVehicle.isPresent()) {
             throw new Exception("Invalid vehicle id");
@@ -69,6 +72,9 @@ public class PNService {
 
         pN.setVehicle(optionalVehicle.get());
         pN.setDriver(optionalDriver.get());
+        if (currentUser != null) {
+            userPnDefaultsService.applyDefaultsToPnIfMissing(pN, currentUser);
+        }
 
         int firmId = optionalVehicle.get().getFirm().getFirmId();
         boolean isCargo = pN.isTrailer();
