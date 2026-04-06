@@ -2209,7 +2209,7 @@ public class ReportController {
         log.info("GeozoneReport firmId={} imei={} geozoneId={} from={} to={} deviceType={} historyUri={}",
                 resolvedFirmId, imei, geozoneId, dateFromS, dateToS, deviceType, uri);
 
-        RestTemplate restTemplate = WebConfig.createRestTemplate(30_000, 300_000);
+        RestTemplate restTemplate = WebConfig.createRestTemplate();
         String body;
         try {
             ResponseEntity<String> historyResponse = restTemplate.exchange(uri, HttpMethod.GET, null, String.class);

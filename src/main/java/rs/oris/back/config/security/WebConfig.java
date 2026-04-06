@@ -19,6 +19,12 @@ import org.springframework.web.client.RestTemplate;
 @Configuration
 public class WebConfig {
 
+    /** Connect timeout for outbound HTTP (e.g. Teltonika/GS100/Galeb APIs). */
+    public static final int HTTP_CONNECT_TIMEOUT_MS = 30_000;
+
+    /** Read timeout for outbound HTTP — 20 minutes (slow report downstream calls). */
+    public static final int HTTP_READ_TIMEOUT_MS = 20 * 60 * 1000;
+
     /**
      * Creates the application's main {@link RestTemplate} with a connection-pooled
      * Apache HTTP client.
@@ -26,13 +32,8 @@ public class WebConfig {
      * <ul>
      *   <li><b>Pool size:</b> up to 50 total connections, 20 per target host —
      *       prevents connection exhaustion under load.</li>
-     *   <li><b>Connect timeout:</b> 5 seconds — fail fast if the target is unreachable.</li>
-     *   <li><b>Read timeout:</b> 30 seconds — generous, as some downstream calls
-     *       (e.g. GPS data) may be slow.</li>
+     *   <li><b>Timeouts:</b> shared prod-tuned constants (30s connect, 20min read).</li>
      * </ul>
-     *
-     * <p>Note: The health-check endpoint uses its own RestTemplate with shorter
-     * timeouts (see {@link rs.oris.back.controller.AdminHealthController}).</p>
      */
     @Bean
     public RestTemplate restTemplate() {
@@ -46,10 +47,14 @@ public class WebConfig {
                 .build();
 
         HttpComponentsClientHttpRequestFactory factory = new HttpComponentsClientHttpRequestFactory(httpClient);
-        factory.setConnectTimeout(30_000);   // 30s connect timeout (prod fix 0fb6c61)
-        factory.setReadTimeout(300_000);     // 5min read timeout — slow report downstream calls
+        factory.setConnectTimeout(HTTP_CONNECT_TIMEOUT_MS);
+        factory.setReadTimeout(HTTP_READ_TIMEOUT_MS);
 
         return new RestTemplate(factory);
+    }
+
+    public static RestTemplate createRestTemplate() {
+        return createRestTemplate(HTTP_CONNECT_TIMEOUT_MS, HTTP_READ_TIMEOUT_MS);
     }
 
     /**

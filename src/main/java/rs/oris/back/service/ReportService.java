@@ -16,13 +16,14 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.http.HttpResponse;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.mime.MultipartEntity;
 import org.apache.http.entity.mime.content.ContentBody;
 import org.apache.http.entity.mime.content.InputStreamBody;
 import org.apache.http.entity.mime.content.StringBody;
-import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.util.IOUtils;
@@ -76,6 +77,7 @@ import rs.oris.back.repository.PNRepository;
 import rs.oris.back.repository.RegistrationRepository;
 import rs.oris.back.repository.TicketRepository;
 import rs.oris.back.repository.VehicleRepository;
+import rs.oris.back.config.security.WebConfig;
 import rs.oris.back.util.DateUtil;
 import rs.oris.back.web.GalebRestComunication;
 
@@ -2580,8 +2582,12 @@ public class ReportService {
         String uri = (gotenbergUrl != null && !gotenbergUrl.isEmpty())
                 ? gotenbergUrl + "/convert/office"
                 : "http://gotenberg:3000/convert/office";
-        HttpClient httpclient = new DefaultHttpClient();
+        RequestConfig requestConfig = RequestConfig.custom()
+                .setConnectTimeout(WebConfig.HTTP_CONNECT_TIMEOUT_MS)
+                .setSocketTimeout(WebConfig.HTTP_READ_TIMEOUT_MS)
+                .build();
         HttpPost httpPost = new HttpPost(uri);
+        httpPost.setConfig(requestConfig);
         // FileBody uploadFilePart = new FileBody(new File(s));
         ContentBody cd = new InputStreamBody(new ByteArrayInputStream(bytes), "my-file.xlsx");
         org.apache.http.entity.mime.content.StringBody s2 = new StringBody("true");
@@ -2597,8 +2603,13 @@ public class ReportService {
         reqEntity.addPart("scale", s4);
 
         httpPost.setEntity(reqEntity);
-        HttpResponse response = httpclient.execute(httpPost);
-        byte[] file = IOUtils.toByteArray(response.getEntity().getContent());
+        byte[] file;
+        try (CloseableHttpClient httpclient = HttpClients.custom()
+                .setDefaultRequestConfig(requestConfig)
+                .build()) {
+            HttpResponse response = httpclient.execute(httpPost);
+            file = IOUtils.toByteArray(response.getEntity().getContent());
+        }
 
         //        File outputFile = new File("outputFile2.pdf");
         //        try (FileOutputStream outputStream = new FileOutputStream(outputFile)) {
