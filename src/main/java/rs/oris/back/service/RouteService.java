@@ -48,8 +48,9 @@ public class RouteService {
     /**
      * vraca sve rute firme
      */
+    @Transactional(readOnly = true)
     public Response<Map<String, List<DTORouteBack>>> getAll(int firmId) {
-        List<Route> list = routeRepository.findByFirmFirmId(firmId);
+        List<Route> list = routeRepository.findAllByFirmIdWithVehicleRoutes(firmId);
         List<DTORouteBack> dtoRouteBacks = new ArrayList<>();
 
         for (Route route : list){
