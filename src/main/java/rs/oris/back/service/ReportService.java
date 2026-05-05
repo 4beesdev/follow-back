@@ -230,23 +230,23 @@ public class ReportService {
         //Mapiranje podataka u  DriverRelationVehicleRoutingInfo
         List<MonthFuelReportEngineDTO> mappedList = byImeiIn.stream().map(element -> new MonthFuelReportEngineDTO(
                         element.getImei(),
-                        element.getEngineSize(),
+                        element.getFuelMargine() != null ? element.getFuelMargine().doubleValue() : null,
                         element.getRegistration(),
                         (element.getModel() == null || element.getModel().isEmpty()) ? element.getManufacturer() : element.getModel()))
                 .collect(Collectors.toList());
 
-        long nonPositiveEngineSizeCount = mappedList.stream()
-                .filter(element -> element.getEngineSize() <= 0)
+        long nonPositiveFuelMargineCount = mappedList.stream()
+                .filter(element -> element.getFuelMargine() == null || element.getFuelMargine() <= 0)
                 .count();
-        log.info("Monthly fuel payload summary: from={}, to={}, imeiCount={}, fuelMargin={}, emptyingMargin={}, nonPositiveEngineSizeCount={}",
-                from, to, mappedList.size(), fuelMargin, emptyingMargin, nonPositiveEngineSizeCount);
-        if (nonPositiveEngineSizeCount > 0) {
-            String badEngineImeis = mappedList.stream()
-                    .filter(element -> element.getEngineSize() <= 0)
+        log.info("Monthly fuel payload summary: from={}, to={}, imeiCount={}, fuelMargin={}, emptyingMargin={}, nonPositiveFuelMargineCount={}",
+                from, to, mappedList.size(), fuelMargin, emptyingMargin, nonPositiveFuelMargineCount);
+        if (nonPositiveFuelMargineCount > 0) {
+            String badFuelMargineImeis = mappedList.stream()
+                    .filter(element -> element.getFuelMargine() == null || element.getFuelMargine() <= 0)
                     .map(MonthFuelReportEngineDTO::getImei)
                     .limit(20)
                     .collect(Collectors.joining(","));
-            log.warn("Monthly fuel payload contains non-positive engineSize for imeis={}", badEngineImeis);
+            log.warn("Monthly fuel payload contains non-positive fuelMargine for imeis={}", badFuelMargineImeis);
         }
 
         //Poziva se metoda na drugom mikroserivsu koja obradjuje dalje
@@ -308,7 +308,7 @@ public class ReportService {
         //Mapiranje podataka u  DriverRelationVehicleRoutingInfo
         List<MonthFuelReportEngineDTO> mappedList = byImeiIn.stream().map(element -> new MonthFuelReportEngineDTO(
                         element.getImei(),
-                        element.getEngineSize(),
+                        element.getFuelMargine() != null ? element.getFuelMargine().doubleValue() : null,
                         element.getRegistration(),
                         (element.getModel() == null || element.getModel().isEmpty()) ? element.getManufacturer() : element.getModel()))
                 .collect(Collectors.toList());
@@ -318,18 +318,18 @@ public class ReportService {
             return new EffectiveWorkingHoursReport(0L, 0L, Collections.emptyList());
         }
 
-        long nonPositiveEngineSizeCount = mappedList.stream()
-                .filter(element -> element.getEngineSize() <= 0)
+        long nonPositiveFuelMargineCount = mappedList.stream()
+                .filter(element -> element.getFuelMargine() == null || element.getFuelMargine() <= 0)
                 .count();
-        log.info("Effective working hours payload summary: from={}, to={}, imeiCount={}, rpm={}, fuelMargin={}, emptyingMargin={}, nonPositiveEngineSizeCount={}",
-                from, to, mappedList.size(), rpm, fuelMargin, emptyingMargin, nonPositiveEngineSizeCount);
-        if (nonPositiveEngineSizeCount > 0) {
-            String badEngineImeis = mappedList.stream()
-                    .filter(element -> element.getEngineSize() <= 0)
+        log.info("Effective working hours payload summary: from={}, to={}, imeiCount={}, rpm={}, fuelMargin={}, emptyingMargin={}, nonPositiveFuelMargineCount={}",
+                from, to, mappedList.size(), rpm, fuelMargin, emptyingMargin, nonPositiveFuelMargineCount);
+        if (nonPositiveFuelMargineCount > 0) {
+            String badFuelMargineImeis = mappedList.stream()
+                    .filter(element -> element.getFuelMargine() == null || element.getFuelMargine() <= 0)
                     .map(MonthFuelReportEngineDTO::getImei)
                     .limit(20)
                     .collect(Collectors.joining(","));
-            log.warn("Effective working hours payload contains non-positive engineSize for imeis={}", badEngineImeis);
+            log.warn("Effective working hours payload contains non-positive fuelMargine for imeis={}", badFuelMargineImeis);
         }
 
         //Poziva se metoda na drugom mikroserivsu koja obradjuje dalje

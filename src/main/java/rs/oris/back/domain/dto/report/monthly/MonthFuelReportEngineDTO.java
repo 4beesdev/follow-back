@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class MonthFuelReportEngineDTO {
     private String imei;
-    private double engineSize;
+    private Double fuelMargine;
     private String registration;
     private String model;
 }

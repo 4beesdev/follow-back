@@ -76,7 +76,7 @@ public class GalebRestComunication {
         //Build map from mappedList
         Map<String, MonthlyFuelConsumptionAditionalDataDTO> vehicles = new HashMap<>();
         for (MonthFuelReportEngineDTO monthFuelReportEngineDTO : mappedList) {
-            vehicles.put(monthFuelReportEngineDTO.getImei(), new MonthlyFuelConsumptionAditionalDataDTO(monthFuelReportEngineDTO.getEngineSize(), monthFuelReportEngineDTO.getRegistration(), monthFuelReportEngineDTO.getModel()));
+            vehicles.put(monthFuelReportEngineDTO.getImei(), new MonthlyFuelConsumptionAditionalDataDTO(monthFuelReportEngineDTO.getFuelMargine(), monthFuelReportEngineDTO.getRegistration(), monthFuelReportEngineDTO.getModel()));
         }
 
         return restTemplate.exchange(
@@ -129,7 +129,7 @@ public class GalebRestComunication {
         //Build map from mappedList
         Map<String, MonthlyFuelConsumptionAditionalDataDTO> vehicles = new HashMap<>();
         for (MonthFuelReportEngineDTO monthFuelReportEngineDTO : mappedList) {
-            vehicles.put(monthFuelReportEngineDTO.getImei(), new MonthlyFuelConsumptionAditionalDataDTO(monthFuelReportEngineDTO.getEngineSize(), monthFuelReportEngineDTO.getRegistration(), monthFuelReportEngineDTO.getModel()));
+            vehicles.put(monthFuelReportEngineDTO.getImei(), new MonthlyFuelConsumptionAditionalDataDTO(monthFuelReportEngineDTO.getFuelMargine(), monthFuelReportEngineDTO.getRegistration(), monthFuelReportEngineDTO.getModel()));
         }
 
         return restTemplate.exchange(

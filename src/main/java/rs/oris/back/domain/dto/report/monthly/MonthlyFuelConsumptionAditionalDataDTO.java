@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class MonthlyFuelConsumptionAditionalDataDTO {
-    private double engineSize;
+    private Double fuelMargine;
     private String registration;
     private String model;
 }
