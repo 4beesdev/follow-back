@@ -3537,7 +3537,7 @@ public class ReportService {
         row.getCell(cellCount++).setCellValue("Vreme stajanja");
 
         for (DTORotue dtoRotue : wholeList) {
-            row = sheet.createRow(++rowCount);
+            row = sheet.createRow(rowCount++);
             cellCount = 0;
             row.createCell(cellCount);
             row.getCell(cellCount++).setCellValue(dtoRotue.getVehicle().getRegistration());
