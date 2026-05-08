@@ -3461,133 +3461,151 @@ public class ReportService {
     }
 
     /**
-     * Izvestaj o povredi ruta
+     * Izvestaj o povredi ruta — multi-vehicle.
+     * Za svako vozilo ide blok: naslov + header + data redovi + "Ukupno" red sa sumama.
      *
-     * @param wholeList rute
-     * @return izv3staj u byte array-u
-     * @throws Exception
+     * @param perVehicle insertion-ordered mapa imei → lista povreda za to vozilo
+     * @return izveštaj u byte array-u (Base64 XLS ili PDF ako eid==2)
      */
-    public byte[] exportRouteIskiakanje(List<DTORotue> wholeList, int eid, long dateFromS, long dateToS, String firmName) throws Exception {
+    public byte[] exportRouteIskiakanje(LinkedHashMap<String, List<DTORotue>> perVehicle, int eid, long dateFromS, long dateToS, String firmName) throws Exception {
         XSSFWorkbook workbook = new XSSFWorkbook();
         XSSFSheet sheet = workbook.createSheet("Povreda rute");
 
-        Collections.sort(wholeList, new Comparator<DTORotue>() {
-            @Override
-            public int compare(DTORotue o1, DTORotue o2) {
-                if (o1.getStartTime().before(o2.getStartTime()))
-                    return -1;
-                return 1;
-            }
-        });
+        // sortiraj povrede po vremenu početka unutar svakog vozila
+        for (List<DTORotue> list : perVehicle.values()) {
+            if (list == null) continue;
+            Collections.sort(list, new Comparator<DTORotue>() {
+                @Override
+                public int compare(DTORotue o1, DTORotue o2) {
+                    if (o1.getStartTime().before(o2.getStartTime()))
+                        return -1;
+                    return 1;
+                }
+            });
+        }
+
+        // stilovi
+        XSSFFont boldFont11 = workbook.createFont();
+        boldFont11.setFontHeightInPoints((short) 11);
+        boldFont11.setBold(true);
+
+        XSSFCellStyle vehicleTitleStyle = workbook.createCellStyle();
+        vehicleTitleStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(165, 211, 242)));
+        vehicleTitleStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        vehicleTitleStyle.setBorderBottom(BorderStyle.MEDIUM);
+        XSSFFont titleFont = workbook.createFont();
+        titleFont.setFontHeightInPoints((short) 12);
+        titleFont.setBold(true);
+        vehicleTitleStyle.setFont(titleFont);
+        vehicleTitleStyle.setAlignment(HorizontalAlignment.LEFT);
+        vehicleTitleStyle.setVerticalAlignment(VerticalAlignment.CENTER);
 
         XSSFCellStyle upperStyle = workbook.createCellStyle();
         upperStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(165, 211, 242)));
-        //style1.setFillPattern(CellStyle.SOLID_FOREGROUND);
         upperStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         upperStyle.setBorderBottom(BorderStyle.MEDIUM);
-
-        XSSFFont font2 = workbook.createFont();
-        font2.setFontHeightInPoints((short) 11);
-        font2.setBold(true);
-        upperStyle.setFont(font2);
+        upperStyle.setFont(boldFont11);
         upperStyle.setAlignment(HorizontalAlignment.CENTER);
 
-        XSSFCellStyle textStyle = workbook.createCellStyle();
-        textStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(222, 222, 222)));
-        textStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        XSSFCellStyle ukupnoStyle = workbook.createCellStyle();
+        ukupnoStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(240, 240, 240)));
+        ukupnoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        ukupnoStyle.setVerticalAlignment(VerticalAlignment.CENTER);
+        ukupnoStyle.setAlignment(HorizontalAlignment.CENTER);
+        ukupnoStyle.setFont(boldFont11);
 
-        XSSFCellStyle dateCellStyle2 = workbook.createCellStyle();
-        dateCellStyle2.setFillForegroundColor(new XSSFColor(new java.awt.Color(220, 223, 227)));
-        //style1.setFillPattern(CellStyle.SOLID_FOREGROUND);
-        CreationHelper createHelper = workbook.getCreationHelper();
-        dateCellStyle2.setDataFormat(
-                createHelper.createDataFormat().getFormat("dd/mm/yyyy HH:mm:ss"));
-        SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-        String period = "Od: " + df.format(new Timestamp(dateFromS)) + "  Do: " + df.format(new Timestamp(dateToS));
+        SimpleDateFormat dfHeader = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
+        sdf.setTimeZone(TimeZone.getTimeZone("Europe/Belgrade"));
+
+        String period = "Od: " + dfHeader.format(new Timestamp(dateFromS)) + "  Do: " + dfHeader.format(new Timestamp(dateToS));
         int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o povredama ruta", firmName, period);
-        int cellCount = 0;
-        Row row = sheet.createRow(rowCount++);
 
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Registracija");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Proizvođač / Model");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Naziv rute");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Vreme početka");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Vreme kraja");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Pređeni put");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Vreme vožnje");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Vreme mirovanja");
-        row.createCell(cellCount);
-        row.getCell(cellCount).setCellStyle(upperStyle);
-        row.getCell(cellCount++).setCellValue("Vreme stajanja");
+        final String[] HEADERS = {
+                "Registracija", "Proizvođač / Model", "Naziv rute",
+                "Vreme početka", "Vreme kraja", "Pređeni put",
+                "Vreme vožnje", "Vreme mirovanja", "Vreme stajanja"
+        };
+        final int COLS = HEADERS.length;
 
-        for (DTORotue dtoRotue : wholeList) {
-            row = sheet.createRow(rowCount++);
-            cellCount = 0;
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(dtoRotue.getVehicle().getRegistration());
+        boolean firstVehicle = true;
+        for (Map.Entry<String, List<DTORotue>> entry : perVehicle.entrySet()) {
+            List<DTORotue> list = entry.getValue();
+            if (list == null || list.isEmpty()) continue;
 
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(dtoRotue.getVehicle().getManufacturer() + "(" + dtoRotue.getVehicle().getModel() + ")");
+            Vehicle v = list.get(0).getVehicle();
+            String regAndModel = v.getRegistration() + " - " + v.getManufacturer() + " / " + v.getModel();
 
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(dtoRotue.getRouteName());
+            // prazan red između vozila
+            if (!firstVehicle) {
+                rowCount++;
+            }
+            firstVehicle = false;
 
-            SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy HH:mm");
-            sdf.setTimeZone(TimeZone.getTimeZone("Europe/Belgrade"));
+            // naslov vozila (merge preko svih kolona)
+            Row titleRow = sheet.createRow(rowCount);
+            for (int c = 0; c < COLS; c++) {
+                titleRow.createCell(c);
+                titleRow.getCell(c).setCellStyle(vehicleTitleStyle);
+            }
+            titleRow.getCell(0).setCellValue(regAndModel);
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 0, COLS - 1));
+            titleRow.setHeightInPoints(20);
+            rowCount++;
 
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(sdf.format(dtoRotue.getStartTime()));
+            // header kolona
+            Row hdr = sheet.createRow(rowCount++);
+            for (int c = 0; c < COLS; c++) {
+                hdr.createCell(c);
+                hdr.getCell(c).setCellStyle(upperStyle);
+                hdr.getCell(c).setCellValue(HEADERS[c]);
+            }
 
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(sdf.format(dtoRotue.getEndTime()));
+            // data redovi i sume
+            double sumPredjeniPut = 0.0;
+            long sumTimeOfTravel = 0L;
+            long sumIdleTime = 0L;
+            long sumStoppedTime = 0L;
 
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(String.format("%.2f", dtoRotue.getRoadTraveled()));
+            for (DTORotue d : list) {
+                Row row = sheet.createRow(rowCount++);
+                int cc = 0;
+                row.createCell(cc++).setCellValue(d.getVehicle().getRegistration());
+                row.createCell(cc++).setCellValue(d.getVehicle().getManufacturer() + "(" + d.getVehicle().getModel() + ")");
+                row.createCell(cc++).setCellValue(d.getRouteName());
+                row.createCell(cc++).setCellValue(sdf.format(d.getStartTime()));
+                row.createCell(cc++).setCellValue(sdf.format(d.getEndTime()));
+                row.createCell(cc++).setCellValue(String.format("%.2f", d.getRoadTraveled()));
+                row.createCell(cc++).setCellValue(formatSeconds((int) d.getTimeOfTravel() / 1000));
+                row.createCell(cc++).setCellValue(formatSeconds((int) d.getIdleTime() / 1000));
+                row.createCell(cc++).setCellValue(formatSeconds((int) d.getStoppedTime() / 1000));
 
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(formatSeconds((int) dtoRotue.getTimeOfTravel() / 1000));
+                sumPredjeniPut += d.getRoadTraveled();
+                sumTimeOfTravel += d.getTimeOfTravel();
+                sumIdleTime += d.getIdleTime();
+                sumStoppedTime += d.getStoppedTime();
+            }
 
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(formatSeconds((int) dtoRotue.getIdleTime() / 1000));
-
-            row.createCell(cellCount);
-            row.getCell(cellCount++).setCellValue(formatSeconds((int) dtoRotue.getStoppedTime() / 1000));
+            // "Ukupno" red — Reg, Model, Naziv rute, Vreme početka, Vreme kraja prazni; sume po koloni
+            Row uku = sheet.createRow(rowCount++);
+            for (int cc = 0; cc < COLS; cc++) {
+                uku.createCell(cc);
+                uku.getCell(cc).setCellStyle(ukupnoStyle);
+            }
+            uku.getCell(0).setCellValue("Ukupno");
+            uku.getCell(5).setCellValue(String.format("%.2f", sumPredjeniPut));
+            uku.getCell(6).setCellValue(formatSeconds((int) (sumTimeOfTravel / 1000)));
+            uku.getCell(7).setCellValue(formatSeconds((int) (sumIdleTime / 1000)));
+            uku.getCell(8).setCellValue(formatSeconds((int) (sumStoppedTime / 1000)));
         }
-        for (int i = 0; i < 34; i++) {
+
+        for (int i = 0; i < COLS; i++) {
             try {
                 sheet.autoSizeColumn(i);
             } catch (Exception e) {
             }
         }
 
-        //        String s = "";
-        //        Date d = new Date();
-        //        int x = d.getSeconds();
-        //        int x2 = d.getMinutes();
-        //        s = "excel" + x + "" + x2 + ".xlsx";
-        //
-        //
-        //        try (FileOutputStream outputStream = new FileOutputStream(s)) {
-        //            workbook.write(outputStream);
-        //        } catch (Exception e) {
-        //            e.printStackTrace();
-        //        }
         if (eid == 2) {
             return getPdf(workbook, true);
         }

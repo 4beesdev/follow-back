@@ -2735,25 +2735,41 @@ public class ReportController {
     /**
      * Vraca izvestaj o rutama vozila u datom intervalu kao byte array workbook
      */
-    @PostMapping(value = "api/firm/{firm_id}/report/imei/{imei}/from/{from}/to/{to}/groute/export/{eid}")
+    @PostMapping(value = "api/firm/{firm_id}/report/from/{from}/to/{to}/groute/export/{eid}")
     private byte[] getRuticeReporticExport(
             @PathVariable("firm_id") int firmId,
             @PathVariable("eid") int eid,
-            @PathVariable("imei") String imei,
             @PathVariable("from") long dateFromS,
             @PathVariable("to") long dateToS,
-            @RequestBody List<Integer> routeIds
+            @RequestBody RouteFalloutExportRequest body
     ) throws Exception {
-        List<DTORotue> wholeList = new ArrayList<>();
-        for (Integer integer : routeIds) {
-            wholeList.addAll(getRuticeReportic(integer, imei, dateFromS, dateToS).getData());
+        List<String> imeis = body.getImeis() == null ? new ArrayList<>() : body.getImeis();
+        List<Integer> routeIds = body.getRouteIds() == null ? new ArrayList<>() : body.getRouteIds();
+
+        LinkedHashMap<String, List<DTORotue>> perVehicle = new LinkedHashMap<>();
+        for (String imei : imeis) {
+            List<DTORotue> wholeList = new ArrayList<>();
+            for (Integer routeId : routeIds) {
+                try {
+                    Response<List<DTORotue>> resp = getRuticeReportic(routeId, imei, dateFromS, dateToS);
+                    if (resp != null && resp.getData() != null) {
+                        wholeList.addAll(resp.getData());
+                    }
+                } catch (Exception ignore) {
+                    // preskoči (imei × route) kombinaciju koja ne valja — npr. nepostojeća ruta ili IMEI
+                }
+            }
+            perVehicle.put(imei, wholeList);
         }
+
         String firmName = "";
         try {
-            Vehicle fv = vehicleService.findByImei(imei);
-            if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
+            if (!imeis.isEmpty()) {
+                Vehicle fv = vehicleService.findByImei(imeis.get(0));
+                if (fv != null && fv.getFirm() != null) firmName = fv.getFirm().getName();
+            }
         } catch (Exception ignore) {}
-        return reportService.exportRouteIskiakanje(wholeList, eid, dateFromS, dateToS, firmName);
+        return reportService.exportRouteIskiakanje(perVehicle, eid, dateFromS, dateToS, firmName);
     }
 
     private double najblizaTacka(double lat, double lng, ArrayList<LatLng> latLngList) {
