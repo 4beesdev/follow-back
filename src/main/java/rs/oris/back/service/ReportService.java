@@ -2680,39 +2680,65 @@ public class ReportService {
         int cellCount = 0;
         Row row;
 
-        // popuni prazan red iznad RADNO VREME — produkt rIdx++ na kraju addExcelReportHeader-a
-        rowCount--;
+        // RADNO VREME redovi nastavljaju odmah ispod Period reda — bez praznog reda 10
+        // (addExcelReportHeader ostavlja rowCount = 10 sa ugrađenim rIdx++ separator-om;
+        //  pomeramo nazad za 2 da bi ++rowCount sledeći put dao zero-indexed 9 = Excel red 10)
+        rowCount -= 2;
 
-        // RADNO VREME u jedan red sa label u koloni 0 i vrednost u koloni 1 (kao Kompanija/Generisano/Period iznad)
+        // stilovi identični onima u addExcelReportHeader za Kompanija/Generisano/Period
+        XSSFFont mBoldLocal = workbook.createFont();
+        mBoldLocal.setBold(true);
+        mBoldLocal.setFontHeightInPoints((short) 10);
+        XSSFFont mFontLocal = workbook.createFont();
+        mFontLocal.setFontHeightInPoints((short) 10);
+
+        XSSFCellStyle mlStyleLocal = workbook.createCellStyle();
+        mlStyleLocal.setFont(mBoldLocal);
+        mlStyleLocal.setAlignment(HorizontalAlignment.LEFT);
+        mlStyleLocal.setVerticalAlignment(VerticalAlignment.CENTER);
+        mlStyleLocal.setFillForegroundColor(new XSSFColor(new java.awt.Color(220, 223, 227)));
+        mlStyleLocal.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+
+        XSSFCellStyle mvStyleLocal = workbook.createCellStyle();
+        mvStyleLocal.setFont(mFontLocal);
+        mvStyleLocal.setAlignment(HorizontalAlignment.LEFT);
+        mvStyleLocal.setVerticalAlignment(VerticalAlignment.CENTER);
+
         if (working == 1 || working == 0) {
             row = sheet.createRow(++rowCount);
+            row.setHeightInPoints(18);
             row.createCell(0).setCellValue("RADNO VREME:");
-            row.getCell(0).setCellStyle(upperStyle);
+            row.getCell(0).setCellStyle(mlStyleLocal);
             row.createCell(1);
-            row.getCell(1).setCellStyle(textStyle);
+            row.getCell(1).setCellStyle(mvStyleLocal);
             String workInterval = String.format("%02d:%02d - %02d:%02d", hFrom, mFrom, hTo, mTo);
             row.getCell(1).setCellValue(workInterval);
         }
 
         if (hfromsa != 0 || mfromsa != 0 || htosa != 0 || mtosa != 0) {
             row = sheet.createRow(++rowCount);
+            row.setHeightInPoints(18);
             row.createCell(0).setCellValue("RADNO VREME (Subota):");
-            row.getCell(0).setCellStyle(upperStyle);
+            row.getCell(0).setCellStyle(mlStyleLocal);
             row.createCell(1);
-            row.getCell(1).setCellStyle(textStyle);
+            row.getCell(1).setCellStyle(mvStyleLocal);
             String saturdayInterval = String.format("%02d:%02d - %02d:%02d", hfromsa, mfromsa, htosa, mtosa);
             row.getCell(1).setCellValue(saturdayInterval);
         }
 
         if (hfromsu != 0 || mfromsu != 0 || htosu != 0 || mtosu != 0) {
             row = sheet.createRow(++rowCount);
+            row.setHeightInPoints(18);
             row.createCell(0).setCellValue("RADNO VREME (Nedelja):");
-            row.getCell(0).setCellStyle(upperStyle);
+            row.getCell(0).setCellStyle(mlStyleLocal);
             row.createCell(1);
-            row.getCell(1).setCellStyle(textStyle);
+            row.getCell(1).setCellStyle(mvStyleLocal);
             String sundayInterval = String.format("%02d:%02d - %02d:%02d", hfromsu, mfromsu, htosu, mtosu);
             row.getCell(1).setCellValue(sundayInterval);
         }
+
+        // razmak između RADNO VREME blokova i tabele Reg./dani
+        rowCount++;
 
 
 
