@@ -2713,6 +2713,7 @@ public class ReportService {
             row.getCell(1).setCellStyle(mvStyleLocal);
             String workInterval = String.format("%02d:%02d - %02d:%02d", hFrom, mFrom, hTo, mTo);
             row.getCell(1).setCellValue(workInterval);
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 3));
         }
 
         if (hfromsa != 0 || mfromsa != 0 || htosa != 0 || mtosa != 0) {
@@ -2724,6 +2725,7 @@ public class ReportService {
             row.getCell(1).setCellStyle(mvStyleLocal);
             String saturdayInterval = String.format("%02d:%02d - %02d:%02d", hfromsa, mfromsa, htosa, mtosa);
             row.getCell(1).setCellValue(saturdayInterval);
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 3));
         }
 
         if (hfromsu != 0 || mfromsu != 0 || htosu != 0 || mtosu != 0) {
@@ -2735,6 +2737,7 @@ public class ReportService {
             row.getCell(1).setCellStyle(mvStyleLocal);
             String sundayInterval = String.format("%02d:%02d - %02d:%02d", hfromsu, mfromsu, htosu, mtosu);
             row.getCell(1).setCellValue(sundayInterval);
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 3));
         }
 
         // razmak između RADNO VREME blokova i tabele Reg./dani
@@ -2819,11 +2822,16 @@ public class ReportService {
             }
         }
 
-        // minimalne širine za labele (kolona 0) i prvu vrednosnu kolonu (1) — autoSize ih skuplja
-        // jer u koloni 1 dane vrednosti su kratke ("12.5"), pa se Kompanija/Generisano/Period i
-        // RADNO VREME vrednosti ne vide u celosti
+        // kolona 0 = širi labels ("RADNO VREME (Nedelja):" je ~22 char)
         if (sheet.getColumnWidth(0) < 22 * 256) sheet.setColumnWidth(0, 22 * 256);
-        if (sheet.getColumnWidth(1) < 18 * 256) sheet.setColumnWidth(1, 18 * 256);
+        // kolone 1-4 — malo iznad autoSize-a (autoSize ne čita merged ćelije, pa Kompanija/
+        // Generisano/Period i RADNO VREME merged 1-3 i Period merged 1-4 budu odsečeni;
+        // 7 char × 3 ≈ 21 char što staje "Galeb Electronics" (17), 7 × 4 ≈ 28 char za period
+        // datuma. Tabela dani 1-4 postaju malo širi od autoSize ~5 ali ostaju uniformni)
+        if (sheet.getColumnWidth(1) < 7 * 256) sheet.setColumnWidth(1, 7 * 256);
+        if (sheet.getColumnWidth(2) < 7 * 256) sheet.setColumnWidth(2, 7 * 256);
+        if (sheet.getColumnWidth(3) < 7 * 256) sheet.setColumnWidth(3, 7 * 256);
+        if (sheet.getColumnWidth(4) < 7 * 256) sheet.setColumnWidth(4, 7 * 256);
 
         rowCount++;
         cellCount = 0;
