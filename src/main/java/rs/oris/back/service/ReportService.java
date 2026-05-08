@@ -3527,6 +3527,16 @@ public class ReportService {
                 "Vreme vožnje", "Vreme mirovanja", "Vreme stajanja"
         };
         final int COLS = HEADERS.length;
+        // eksplicitne širine kolona — autoSize razvuče header "Vreme stajanja" preko A4 landscape granice
+        final int[] COL_WIDTHS = { 12, 16, 18, 16, 16, 12, 14, 14, 14 };
+        for (int c = 0; c < COLS; c++) {
+            sheet.setColumnWidth(c, COL_WIDTHS[c] * 256);
+        }
+        // garantuje fit na jednu stranicu po širini pri Gotenberg/LibreOffice konverziji
+        sheet.setFitToPage(true);
+        sheet.getPrintSetup().setFitWidth((short) 1);
+        sheet.getPrintSetup().setFitHeight((short) 0);
+        sheet.getPrintSetup().setLandscape(true);
 
         boolean firstVehicle = true;
         for (Map.Entry<String, List<DTORotue>> entry : perVehicle.entrySet()) {
@@ -3597,13 +3607,6 @@ public class ReportService {
             uku.getCell(6).setCellValue(formatSeconds((int) (sumTimeOfTravel / 1000)));
             uku.getCell(7).setCellValue(formatSeconds((int) (sumIdleTime / 1000)));
             uku.getCell(8).setCellValue(formatSeconds((int) (sumStoppedTime / 1000)));
-        }
-
-        for (int i = 0; i < COLS; i++) {
-            try {
-                sheet.autoSizeColumn(i);
-            } catch (Exception e) {
-            }
         }
 
         if (eid == 2) {
