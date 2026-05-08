@@ -2680,71 +2680,38 @@ public class ReportService {
         int cellCount = 0;
         Row row;
 
-        if (working == 1) {
-            System.out.println("OVDE1");
-            row = sheet.createRow(rowCount++);
-            row.createCell(0);
-            row.getCell(0).setCellStyle(textStyle);
-            row.getCell(0).setCellValue("Radno vreme");
-        } else if (working == 0) {
-            System.out.println("OVDE2");
+        // popuni prazan red iznad RADNO VREME — produkt rIdx++ na kraju addExcelReportHeader-a
+        rowCount--;
 
-            row = sheet.createRow(rowCount++);
-            row.createCell(0);
-            row.getCell(0).setCellStyle(textStyle);
-            row.getCell(0).setCellValue("Van radnog vremena");
-        } else {
-
-        }
-
-        /* ---------- working-hours note (only when working == 1) ---------- */
+        // RADNO VREME u jedan red sa label u koloni 0 i vrednost u koloni 1 (kao Kompanija/Generisano/Period iznad)
         if (working == 1 || working == 0) {
-
-            cellCount = 0;
-            row = sheet.createRow(++rowCount);          // label row
-            row.createCell(cellCount);
-            row.getCell(cellCount).setCellStyle(upperStyle);
-            row.getCell(cellCount++)
-                    .setCellValue("RADNO VREME:");
-
-            row = sheet.createRow(++rowCount);          // value row
-            row.createCell(0);
-            row.getCell(0).setCellStyle(textStyle);
-            String workInterval = String.format("%02d:%02d - %02d:%02d",
-                    hFrom, mFrom, hTo, mTo);
-            row.getCell(0).setCellValue(workInterval);
-
-            rowCount++;            // leave the empty line that already existed
+            row = sheet.createRow(++rowCount);
+            row.createCell(0).setCellValue("RADNO VREME:");
+            row.getCell(0).setCellStyle(upperStyle);
+            row.createCell(1);
+            row.getCell(1).setCellStyle(textStyle);
+            String workInterval = String.format("%02d:%02d - %02d:%02d", hFrom, mFrom, hTo, mTo);
+            row.getCell(1).setCellValue(workInterval);
         }
 
-        // --- Add Saturday Working Hours if defined ---
         if (hfromsa != 0 || mfromsa != 0 || htosa != 0 || mtosa != 0) {
-            row = sheet.createRow(++rowCount);  // label row
+            row = sheet.createRow(++rowCount);
             row.createCell(0).setCellValue("RADNO VREME (Subota):");
             row.getCell(0).setCellStyle(upperStyle);
-
-            row = sheet.createRow(++rowCount);  // value row
-            row.createCell(0);
-            row.getCell(0).setCellStyle(textStyle);
+            row.createCell(1);
+            row.getCell(1).setCellStyle(textStyle);
             String saturdayInterval = String.format("%02d:%02d - %02d:%02d", hfromsa, mfromsa, htosa, mtosa);
-            row.getCell(0).setCellValue(saturdayInterval);
-
-            rowCount++; // empty line
+            row.getCell(1).setCellValue(saturdayInterval);
         }
 
-        // --- Add Sunday Working Hours if defined ---
         if (hfromsu != 0 || mfromsu != 0 || htosu != 0 || mtosu != 0) {
-            row = sheet.createRow(++rowCount);  // label row
+            row = sheet.createRow(++rowCount);
             row.createCell(0).setCellValue("RADNO VREME (Nedelja):");
             row.getCell(0).setCellStyle(upperStyle);
-
-            row = sheet.createRow(++rowCount);  // value row
-            row.createCell(0);
-            row.getCell(0).setCellStyle(textStyle);
+            row.createCell(1);
+            row.getCell(1).setCellStyle(textStyle);
             String sundayInterval = String.format("%02d:%02d - %02d:%02d", hfromsu, mfromsu, htosu, mtosu);
-            row.getCell(0).setCellValue(sundayInterval);
-
-            rowCount++; // empty line
+            row.getCell(1).setCellValue(sundayInterval);
         }
 
 
@@ -2825,6 +2792,12 @@ public class ReportService {
             } catch (Exception e) {
             }
         }
+
+        // minimalne širine za labele (kolona 0) i prvu vrednosnu kolonu (1) — autoSize ih skuplja
+        // jer u koloni 1 dane vrednosti su kratke ("12.5"), pa se Kompanija/Generisano/Period i
+        // RADNO VREME vrednosti ne vide u celosti
+        if (sheet.getColumnWidth(0) < 22 * 256) sheet.setColumnWidth(0, 22 * 256);
+        if (sheet.getColumnWidth(1) < 18 * 256) sheet.setColumnWidth(1, 18 * 256);
 
         rowCount++;
         cellCount = 0;
