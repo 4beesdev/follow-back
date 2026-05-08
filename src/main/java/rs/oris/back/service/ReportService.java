@@ -2685,6 +2685,26 @@ public class ReportService {
         //  pomeramo nazad za 2 da bi ++rowCount sledeći put dao zero-indexed 9 = Excel red 10)
         rowCount -= 2;
 
+        // proširi merged regions Kompanija/Generisano/Period iz addExcelReportHeader
+        // sa 1-3 (1-4 za Period) na 1-7 — pojedinačne kolone ostaju autoSize (uniformno
+        // u tabeli dani), ali vrednost se prikazuje preko više kolona pa staje
+        // "Galeb Electronics", datum, period itd.
+        List<Integer> mergedToRemove = new ArrayList<>();
+        for (int i = sheet.getNumMergedRegions() - 1; i >= 0; i--) {
+            CellRangeAddress region = sheet.getMergedRegion(i);
+            int firstRow = region.getFirstRow();
+            // Kompanija (6), Generisano (7), Period (8) — sve sa kolonom 1
+            if ((firstRow == 6 || firstRow == 7 || firstRow == 8) && region.getFirstColumn() == 1) {
+                mergedToRemove.add(i);
+            }
+        }
+        for (Integer idx : mergedToRemove) {
+            sheet.removeMergedRegion(idx);
+        }
+        sheet.addMergedRegion(new CellRangeAddress(6, 6, 1, 7));
+        sheet.addMergedRegion(new CellRangeAddress(7, 7, 1, 7));
+        sheet.addMergedRegion(new CellRangeAddress(8, 8, 1, 7));
+
         // stilovi identični onima u addExcelReportHeader za Kompanija/Generisano/Period
         XSSFFont mBoldLocal = workbook.createFont();
         mBoldLocal.setBold(true);
@@ -2713,7 +2733,7 @@ public class ReportService {
             row.getCell(1).setCellStyle(mvStyleLocal);
             String workInterval = String.format("%02d:%02d - %02d:%02d", hFrom, mFrom, hTo, mTo);
             row.getCell(1).setCellValue(workInterval);
-            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 3));
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 7));
         }
 
         if (hfromsa != 0 || mfromsa != 0 || htosa != 0 || mtosa != 0) {
@@ -2725,7 +2745,7 @@ public class ReportService {
             row.getCell(1).setCellStyle(mvStyleLocal);
             String saturdayInterval = String.format("%02d:%02d - %02d:%02d", hfromsa, mfromsa, htosa, mtosa);
             row.getCell(1).setCellValue(saturdayInterval);
-            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 3));
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 7));
         }
 
         if (hfromsu != 0 || mfromsu != 0 || htosu != 0 || mtosu != 0) {
@@ -2737,7 +2757,7 @@ public class ReportService {
             row.getCell(1).setCellStyle(mvStyleLocal);
             String sundayInterval = String.format("%02d:%02d - %02d:%02d", hfromsu, mfromsu, htosu, mtosu);
             row.getCell(1).setCellValue(sundayInterval);
-            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 3));
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 7));
         }
 
         // razmak između RADNO VREME blokova i tabele Reg./dani
@@ -2824,14 +2844,6 @@ public class ReportService {
 
         // kolona 0 = širi labels ("RADNO VREME (Nedelja):" je ~22 char)
         if (sheet.getColumnWidth(0) < 22 * 256) sheet.setColumnWidth(0, 22 * 256);
-        // kolone 1-4 — malo iznad autoSize-a (autoSize ne čita merged ćelije, pa Kompanija/
-        // Generisano/Period i RADNO VREME merged 1-3 i Period merged 1-4 budu odsečeni;
-        // 7 char × 3 ≈ 21 char što staje "Galeb Electronics" (17), 7 × 4 ≈ 28 char za period
-        // datuma. Tabela dani 1-4 postaju malo širi od autoSize ~5 ali ostaju uniformni)
-        if (sheet.getColumnWidth(1) < 7 * 256) sheet.setColumnWidth(1, 7 * 256);
-        if (sheet.getColumnWidth(2) < 7 * 256) sheet.setColumnWidth(2, 7 * 256);
-        if (sheet.getColumnWidth(3) < 7 * 256) sheet.setColumnWidth(3, 7 * 256);
-        if (sheet.getColumnWidth(4) < 7 * 256) sheet.setColumnWidth(4, 7 * 256);
 
         rowCount++;
         cellCount = 0;
