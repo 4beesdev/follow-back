@@ -2658,6 +2658,8 @@ public class ReportController {
             gs100List = mapper.readValue(result, new TypeReference<List<Gs100>>() {
             });
         }
+        // server-live vraća history sortiran DESC po gps.timestamp; petlja niže prati hronologiju (start/end po izlasku/povratku na rutu) i pretpostavlja ASC
+        Collections.reverse(gs100List);
 
         if (route.getRouteString() == null || route.getRouteString().length() < 10) {
             return null;
