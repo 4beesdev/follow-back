@@ -2677,6 +2677,32 @@ public class ReportService {
         SimpleDateFormat df2 = new SimpleDateFormat("dd.MM.yyyy");
         String period = "Od: " + df2.format(tsFrom) + "  Do: " + df2.format(tsTo);
         int rowCount = addExcelReportHeader(workbook, sheet, "Mesečni izveštaj o pređenom putu", firmName, period, warningMessage);
+
+        // proširi border bottom title reda preko cele tabele (Reg + days + Ukupno).
+        // addExcelReportHeader pravi merge 0-7 sa borderBottom samo na ćeliji 0, pa
+        // vizuelno linija ide samo do kolone H. Uklanjamo stari merge, postavljamo border
+        // na svaku ćeliju 0..(totalCols-1), pa dodajemo novi merge preko cele širine.
+        int titleRowIdx = 4;
+        int totalCols = days + 2;
+        Row titleRow = sheet.getRow(titleRowIdx);
+        if (titleRow != null && titleRow.getCell(0) != null) {
+            for (int i = sheet.getNumMergedRegions() - 1; i >= 0; i--) {
+                CellRangeAddress region = sheet.getMergedRegion(i);
+                if (region.getFirstRow() == titleRowIdx && region.getFirstColumn() == 0) {
+                    sheet.removeMergedRegion(i);
+                    break;
+                }
+            }
+            XSSFCellStyle titleCellStyle = (XSSFCellStyle) titleRow.getCell(0).getCellStyle();
+            for (int c = 0; c < totalCols; c++) {
+                if (titleRow.getCell(c) == null) {
+                    titleRow.createCell(c);
+                }
+                titleRow.getCell(c).setCellStyle(titleCellStyle);
+            }
+            sheet.addMergedRegion(new CellRangeAddress(titleRowIdx, titleRowIdx, 0, totalCols - 1));
+        }
+
         int cellCount = 0;
         Row row;
 
@@ -2703,7 +2729,8 @@ public class ReportService {
         }
         sheet.addMergedRegion(new CellRangeAddress(6, 6, 1, 7));
         sheet.addMergedRegion(new CellRangeAddress(7, 7, 1, 7));
-        sheet.addMergedRegion(new CellRangeAddress(8, 8, 1, 7));
+        // Period vrednost je duža ("Od: 01.04.2026  Do: 30.04.2026" = 30 char), širi merge
+        sheet.addMergedRegion(new CellRangeAddress(8, 8, 1, 10));
 
         // stilovi identični onima u addExcelReportHeader za Kompanija/Generisano/Period
         XSSFFont mBoldLocal = workbook.createFont();
