@@ -2727,10 +2727,12 @@ public class ReportService {
         for (Integer idx : mergedToRemove) {
             sheet.removeMergedRegion(idx);
         }
-        sheet.addMergedRegion(new CellRangeAddress(6, 6, 1, 7));
-        sheet.addMergedRegion(new CellRangeAddress(7, 7, 1, 7));
-        // Period vrednost je duža ("Od: 01.04.2026  Do: 30.04.2026" = 30 char), širi merge
-        sheet.addMergedRegion(new CellRangeAddress(8, 8, 1, 10));
+        // svi shared header redovi sa vrednostima (Kompanija, Generisano, Period) idu
+        // u merge 1-15 da niko ne odsečen — kolone su autoSize uske (~3-4 char) jer
+        // sadrže brojeve dana 1, 2, 3 itd., pa treba dovoljno kolona u merge-u
+        sheet.addMergedRegion(new CellRangeAddress(6, 6, 1, 15));
+        sheet.addMergedRegion(new CellRangeAddress(7, 7, 1, 15));
+        sheet.addMergedRegion(new CellRangeAddress(8, 8, 1, 15));
 
         // stilovi identični onima u addExcelReportHeader za Kompanija/Generisano/Period
         XSSFFont mBoldLocal = workbook.createFont();
@@ -2752,6 +2754,16 @@ public class ReportService {
         mvStyleLocal.setVerticalAlignment(VerticalAlignment.CENTER);
 
         if (working == 1 || working == 0) {
+            // "Tip izveštaja:" red — vrednost zavisi od working parametra
+            row = sheet.createRow(++rowCount);
+            row.setHeightInPoints(18);
+            row.createCell(0).setCellValue("Tip izveštaja:");
+            row.getCell(0).setCellStyle(mlStyleLocal);
+            row.createCell(1);
+            row.getCell(1).setCellStyle(mvStyleLocal);
+            row.getCell(1).setCellValue(working == 1 ? "Radno vreme" : "Van radnog vremena");
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 15));
+
             row = sheet.createRow(++rowCount);
             row.setHeightInPoints(18);
             row.createCell(0).setCellValue("RADNO VREME:");
@@ -2760,7 +2772,7 @@ public class ReportService {
             row.getCell(1).setCellStyle(mvStyleLocal);
             String workInterval = String.format("%02d:%02d - %02d:%02d", hFrom, mFrom, hTo, mTo);
             row.getCell(1).setCellValue(workInterval);
-            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 7));
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 15));
         }
 
         if (hfromsa != 0 || mfromsa != 0 || htosa != 0 || mtosa != 0) {
@@ -2772,7 +2784,7 @@ public class ReportService {
             row.getCell(1).setCellStyle(mvStyleLocal);
             String saturdayInterval = String.format("%02d:%02d - %02d:%02d", hfromsa, mfromsa, htosa, mtosa);
             row.getCell(1).setCellValue(saturdayInterval);
-            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 7));
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 15));
         }
 
         if (hfromsu != 0 || mfromsu != 0 || htosu != 0 || mtosu != 0) {
@@ -2784,7 +2796,7 @@ public class ReportService {
             row.getCell(1).setCellStyle(mvStyleLocal);
             String sundayInterval = String.format("%02d:%02d - %02d:%02d", hfromsu, mfromsu, htosu, mtosu);
             row.getCell(1).setCellValue(sundayInterval);
-            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 7));
+            sheet.addMergedRegion(new CellRangeAddress(rowCount, rowCount, 1, 15));
         }
 
         // razmak između RADNO VREME blokova i tabele Reg./dani
