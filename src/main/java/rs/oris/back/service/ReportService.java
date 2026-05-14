@@ -2694,11 +2694,11 @@ public class ReportService {
                 }
             }
             XSSFCellStyle titleCellStyle = (XSSFCellStyle) titleRow.getCell(0).getCellStyle();
-            for (int c = 0; c < totalCols; c++) {
-                if (titleRow.getCell(c) == null) {
-                    titleRow.createCell(c);
+            for (int col = 0; col < totalCols; col++) {
+                if (titleRow.getCell(col) == null) {
+                    titleRow.createCell(col);
                 }
-                titleRow.getCell(c).setCellStyle(titleCellStyle);
+                titleRow.getCell(col).setCellStyle(titleCellStyle);
             }
             sheet.addMergedRegion(new CellRangeAddress(titleRowIdx, titleRowIdx, 0, totalCols - 1));
         }
@@ -3591,24 +3591,24 @@ public class ReportService {
         // addExcelReportHeader pravi merge 0-7 sa borderBottom samo na ćeliji 0, pa
         // vizuelno linija ide samo do kolone H. Uklanjamo stari merge, postavljamo border
         // na svaku ćeliju 0-(COLS-1), pa dodajemo novi merge preko punih 9 kolona.
-        int titleRowIdx = 4; // pozicija "Izveštaj o povredama ruta" reda u shared header-u
-        Row titleRow = sheet.getRow(titleRowIdx);
-        if (titleRow != null && titleRow.getCell(0) != null) {
+        int headerTitleRowIdx = 4; // pozicija "Izveštaj o povredama ruta" reda u shared header-u
+        Row headerTitleRow = sheet.getRow(headerTitleRowIdx);
+        if (headerTitleRow != null && headerTitleRow.getCell(0) != null) {
             for (int i = sheet.getNumMergedRegions() - 1; i >= 0; i--) {
                 CellRangeAddress region = sheet.getMergedRegion(i);
-                if (region.getFirstRow() == titleRowIdx && region.getFirstColumn() == 0) {
+                if (region.getFirstRow() == headerTitleRowIdx && region.getFirstColumn() == 0) {
                     sheet.removeMergedRegion(i);
                     break;
                 }
             }
-            XSSFCellStyle titleCellStyle = (XSSFCellStyle) titleRow.getCell(0).getCellStyle();
-            for (int c = 0; c < COLS; c++) {
-                if (titleRow.getCell(c) == null) {
-                    titleRow.createCell(c);
+            XSSFCellStyle headerTitleStyle = (XSSFCellStyle) headerTitleRow.getCell(0).getCellStyle();
+            for (int col = 0; col < COLS; col++) {
+                if (headerTitleRow.getCell(col) == null) {
+                    headerTitleRow.createCell(col);
                 }
-                titleRow.getCell(c).setCellStyle(titleCellStyle);
+                headerTitleRow.getCell(col).setCellStyle(headerTitleStyle);
             }
-            sheet.addMergedRegion(new CellRangeAddress(titleRowIdx, titleRowIdx, 0, COLS - 1));
+            sheet.addMergedRegion(new CellRangeAddress(headerTitleRowIdx, headerTitleRowIdx, 0, COLS - 1));
         }
         // eksplicitne širine kolona — autoSize razvuče header "Vreme stajanja" preko A4 landscape granice
         final int[] COL_WIDTHS = { 12, 16, 18, 16, 16, 12, 14, 14, 14 };
