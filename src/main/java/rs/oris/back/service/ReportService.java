@@ -3530,7 +3530,8 @@ public class ReportService {
         ukupnoStyle.setFillForegroundColor(new XSSFColor(new java.awt.Color(240, 240, 240)));
         ukupnoStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
         ukupnoStyle.setVerticalAlignment(VerticalAlignment.CENTER);
-        ukupnoStyle.setAlignment(HorizontalAlignment.CENTER);
+        // levo poravnanje kao data redovi iznad (oni ne postavljaju alignment, pa uzimaju default LEFT)
+        ukupnoStyle.setAlignment(HorizontalAlignment.LEFT);
         ukupnoStyle.setFont(boldFont11);
 
         SimpleDateFormat dfHeader = new SimpleDateFormat("dd.MM.yyyy HH:mm");
