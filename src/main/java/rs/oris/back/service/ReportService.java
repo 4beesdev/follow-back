@@ -667,7 +667,8 @@ public class ReportService {
         XSSFWorkbook workbook = new XSSFWorkbook();
         XSSFSheet sheet = workbook.createSheet("Relacije");
 
-        String period = "Od: " + fromS + "  Do: " + toS;
+        DateTimeFormatter periodFmt = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        String period = "Od: " + LocalDate.parse(fromS).format(periodFmt) + "  Do: " + LocalDate.parse(toS).format(periodFmt);
         int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o relacijama vozila", firmName, period);
 
         XSSFCellStyle dateCellStyle2 = workbook.createCellStyle();
@@ -1134,7 +1135,8 @@ public class ReportService {
         titleUpperStyle.setAlignment(HorizontalAlignment.CENTER);
         titleUpperStyle.setWrapText(true);
 
-        String period = "Od: " + fromS + "  Do: " + toS;
+        DateTimeFormatter periodFmt = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        String period = "Od: " + LocalDate.parse(fromS).format(periodFmt) + "  Do: " + LocalDate.parse(toS).format(periodFmt);
         int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o relacijama vozila", firmName, period, warningMessage);
         int cellCount = 0;
 
