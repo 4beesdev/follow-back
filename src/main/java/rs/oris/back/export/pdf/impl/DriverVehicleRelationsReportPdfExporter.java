@@ -67,7 +67,7 @@ public class DriverVehicleRelationsReportPdfExporter extends PdfExporter {
             document.add(titleP);
 
             //Dodaj vreme izvestaja
-            Paragraph time = new Paragraph("Od: "+from.format(DateTimeFormatter.ISO_DATE)+"     Do: "+to.format(DateTimeFormatter.ISO_DATE));
+            Paragraph time = new Paragraph("Od: "+from.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))+"     Do: "+to.format(DateTimeFormatter.ofPattern("dd.MM.yyyy")));
             time.setAlignment(Element.ALIGN_CENTER);
             document.add(time);
             addWarningMessage(document);

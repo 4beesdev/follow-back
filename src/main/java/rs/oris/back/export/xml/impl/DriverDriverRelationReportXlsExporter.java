@@ -37,7 +37,7 @@ public class DriverDriverRelationReportXlsExporter extends XlsExporter {
 
                 //Kreira sheet1
                 Sheet sheet = workbook.createSheet("Sheet1");
-                String subtitle="Od: "+from.format(DateTimeFormatter.ISO_DATE)+"     Do: "+to.format(DateTimeFormatter.ISO_DATE);
+                String subtitle="Od: "+from.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"))+"     Do: "+to.format(DateTimeFormatter.ofPattern("dd.MM.yyyy"));
                 setTitle(sheet,title,subtitle);
                 // Create a header row
                 Row headerRow = sheet.createRow(2);
