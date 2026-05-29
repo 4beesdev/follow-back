@@ -6,14 +6,19 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
+import rs.oris.back.domain.Driver;
 import rs.oris.back.domain.Firm;
 import rs.oris.back.domain.User;
 import rs.oris.back.domain.UserVehicleGroup;
 import rs.oris.back.domain.Vehicle;
 import rs.oris.back.domain.VehicleGroup;
 import rs.oris.back.domain.VehicleVehicleGroup;
+import rs.oris.back.domain.dto.VehicleWithGroupsDTO;
+import rs.oris.back.repository.DriverRepository;
 import rs.oris.back.repository.FirmRepository;
 import rs.oris.back.repository.VehicleRepository;
+
+import java.util.Map;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,6 +27,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -33,6 +39,8 @@ public class VehicleServiceAuthorizationTest {
     private VehicleRepository vehicleRepository;
     @Mock
     private FirmRepository firmRepository;
+    @Mock
+    private DriverRepository driverRepository;
 
     private VehicleService vehicleService;
 
@@ -41,6 +49,7 @@ public class VehicleServiceAuthorizationTest {
         vehicleService = new VehicleService();
         ReflectionTestUtils.setField(vehicleService, "vehicleRepository", vehicleRepository);
         ReflectionTestUtils.setField(vehicleService, "firmRepository", firmRepository);
+        ReflectionTestUtils.setField(vehicleService, "driverRepository", driverRepository);
     }
 
     @Test
@@ -121,6 +130,43 @@ public class VehicleServiceAuthorizationTest {
         List<String> filteredImeis = vehicleService.filterAccessibleImeis(user, 2, Arrays.asList("IMEI-9", "IMEI-10"));
 
         assertEquals(Collections.singletonList("IMEI-9"), filteredImeis);
+    }
+
+    @Test
+    public void getAllVehicles_setsDriverNameFromFirmDrivers() throws Exception {
+        Firm firm = firm(7);
+        User user = new User();
+        user.setSuperAdmin(true);
+        user.setAdmin(true);
+
+        Vehicle withDriver = vehicle("IMEI-A", firm);
+        withDriver.setVehicleId(101);
+        Vehicle withoutDriver = vehicle("IMEI-B", firm);
+        withoutDriver.setVehicleId(102);
+
+        Driver driver = new Driver();
+        driver.setName("Pera Perić");
+        driver.setVehicle(withDriver);
+
+        when(firmRepository.findById(7)).thenReturn(Optional.of(firm));
+        when(vehicleRepository.findWithGroupsByFirmIdAndActive(7))
+                .thenReturn(Arrays.asList(withDriver, withoutDriver));
+        when(driverRepository.findByFirmFirmId(7))
+                .thenReturn(Collections.singletonList(driver));
+
+        Map<String, List<VehicleWithGroupsDTO>> result =
+                vehicleService.getAllVehicles(user, 7).getData();
+
+        List<VehicleWithGroupsDTO> dtos = result.get("vehicles");
+        assertEquals(2, dtos.size());
+
+        VehicleWithGroupsDTO dtoWith = dtos.stream()
+                .filter(d -> d.getVehicle().getVehicleId() == 101).findFirst().get();
+        VehicleWithGroupsDTO dtoWithout = dtos.stream()
+                .filter(d -> d.getVehicle().getVehicleId() == 102).findFirst().get();
+
+        assertEquals("Pera Perić", dtoWith.getDriverName());
+        assertNull(dtoWithout.getDriverName());
     }
 
     private UserVehicleGroup userVehicleGroup(VehicleGroup vehicleGroup) {

@@ -96,6 +96,8 @@ public class VehicleService {
     private MongoServerConfig mongoServerConfig;
     @Autowired
     private RestTemplate restTemplate;
+    @Autowired
+    private DriverRepository driverRepository;
 
     /**
      * Vraca sva neobrisana (aktivna) vozila
@@ -171,11 +173,21 @@ public class VehicleService {
             }
         }
 
+        // Mapa vehicleId -> ime vozača (veza se čita sa strane vozača, jer se tako i dodeljuje)
+        Map<Integer, String> driverNameByVehicleId = new HashMap<>();
+        for (Driver driver : driverRepository.findByFirmFirmId(resolvedFirmId)) {
+            if (driver.getVehicle() != null) {
+                driverNameByVehicleId.put(driver.getVehicle().getVehicleId(), driver.getName());
+            }
+        }
+
         DecimalFormat decimalFormat = new DecimalFormat("#.00");
         List<VehicleWithGroupsDTO> dtos = new ArrayList<>();
         for (Vehicle vehicle : list) {
             vehicle.setMillage(Double.parseDouble(decimalFormat.format(vehicle.getMillage())));
-            dtos.add(VehicleWithGroupsDTO.from(vehicle, vehicle.getVehicleVehicleGroupSet()));
+            VehicleWithGroupsDTO dto = VehicleWithGroupsDTO.from(vehicle, vehicle.getVehicleVehicleGroupSet());
+            dto.setDriverName(driverNameByVehicleId.get(vehicle.getVehicleId()));
+            dtos.add(dto);
         }
 
         Map<String, List<VehicleWithGroupsDTO>> map = new HashMap<>();
