@@ -11,6 +11,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import rs.oris.back.domain.Firm;
 import rs.oris.back.domain.User;
 import rs.oris.back.domain.reports.monthly_fuel.MonthlyFuelConsumptionReport;
+import rs.oris.back.repository.DriverRepository;
 import rs.oris.back.service.ReportService;
 import rs.oris.back.service.UserService;
 import rs.oris.back.service.VehicleService;
@@ -33,6 +34,8 @@ public class ReportsControllerAuthorizationTest {
     private UserService userService;
     @Mock
     private VehicleService vehicleService;
+    @Mock
+    private DriverRepository driverRepository;
 
     @After
     public void tearDown() {
@@ -41,7 +44,7 @@ public class ReportsControllerAuthorizationTest {
 
     @Test
     public void getMonthlyFuelReports_usesFilteredImeis() throws Exception {
-        ReportsController controller = new ReportsController(reportService, userService, vehicleService);
+        ReportsController controller = new ReportsController(reportService, userService, vehicleService, driverRepository);
         User user = new User();
         Firm firm = new Firm();
         firm.setFirmId(1);
@@ -67,7 +70,7 @@ public class ReportsControllerAuthorizationTest {
 
     @Test
     public void getMonthlyFuelReports_ignoresInvalidImeisAndUsesOnlyValidOnes() throws Exception {
-        ReportsController controller = new ReportsController(reportService, userService, vehicleService);
+        ReportsController controller = new ReportsController(reportService, userService, vehicleService, driverRepository);
         User user = new User();
         Firm firm = new Firm();
         firm.setFirmId(1);
