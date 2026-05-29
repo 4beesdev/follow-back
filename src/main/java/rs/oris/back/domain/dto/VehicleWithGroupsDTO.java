@@ -17,6 +17,8 @@ public class VehicleWithGroupsDTO {
 
     private List<VehicleGroupItemDTO> vehicleVehicleGroupSet;
 
+    private String driverName;
+
     public VehicleWithGroupsDTO() {}
 
     public VehicleWithGroupsDTO(Vehicle vehicle, List<VehicleGroupItemDTO> vehicleVehicleGroupSet) {
@@ -55,5 +57,13 @@ public class VehicleWithGroupsDTO {
 
     public void setVehicleVehicleGroupSet(List<VehicleGroupItemDTO> vehicleVehicleGroupSet) {
         this.vehicleVehicleGroupSet = vehicleVehicleGroupSet;
+    }
+
+    public String getDriverName() {
+        return driverName;
+    }
+
+    public void setDriverName(String driverName) {
+        this.driverName = driverName;
     }
 }
