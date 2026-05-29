@@ -3,30 +3,27 @@ package rs.oris.back.domain;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class DriverSerializationTest {
 
     @Test
-    public void driverJson_doesNotIncludeVehicle_andDoesNotRecurse() throws Exception {
+    public void driverWithAssignedVehicle_serializesWithoutRecursion() throws Exception {
         Vehicle vehicle = new Vehicle();
         vehicle.setRegistration("ZZ-000-AA");
 
         Driver driver = new Driver();
         driver.setName("Pera Perić");
-        driver.setVehicle(vehicle);   // dvosmerna veza koja bi inače pravila rekurziju
-
-        // Obe strane upućuju jedna na drugu
+        driver.setVehicle(vehicle);
+        // Povratna referenca koja bi bez @JsonIgnore na Vehicle.driver pravila rekurziju
         vehicle.setDriver(driver);
 
+        // Ako rekurzija nije prekinuta, ovo baca StackOverflowError; uspešan poziv je sam po sebi provera.
         String json = new ObjectMapper().writeValueAsString(driver);
 
-        // Ime vozača mora ostati
+        // Ime vozača ostaje
         assertTrue(json.contains("Pera Perić"));
-        // Inverzno polje 'vehicle' na vozaču NE sme da se serijalizuje
-        assertFalse(json.contains("\"vehicle\""));
-        // Ni sadržaj vozila ne sme da procuri (potvrđuje da polje nije samo preimenovano)
-        assertFalse(json.contains("ZZ-000-AA"));
+        // Vozač zadržava dodeljeno vozilo u JSON-u (potrebno za edit formu i za deserijalizaciju pri dodeli)
+        assertTrue(json.contains("ZZ-000-AA"));
     }
 }

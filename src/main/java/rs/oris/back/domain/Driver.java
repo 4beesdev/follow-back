@@ -24,7 +24,6 @@ public class Driver {
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "vehicle_id")
-    @JsonIgnore
     private Vehicle vehicle;
 
     @Column(name = "licence_expiry")
