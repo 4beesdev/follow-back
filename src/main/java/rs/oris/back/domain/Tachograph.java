@@ -14,7 +14,7 @@ public class Tachograph {
     private boolean digital;
     private Date dateFrom;
     private Date dateTo;
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne
     @JoinColumn(name = "vehicle_id")
     private Vehicle vehicle;
 
