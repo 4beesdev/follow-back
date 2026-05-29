@@ -123,6 +123,7 @@ public class Vehicle {
     private Timestamp deletedDate;
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "driver_id")
+    @JsonIgnore
     private Driver driver;
     private Integer fuelMargine;
 
