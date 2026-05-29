@@ -26,5 +26,7 @@ public class DriverSerializationTest {
         assertTrue(json.contains("Pera Perić"));
         // Inverzno polje 'vehicle' na vozaču NE sme da se serijalizuje
         assertFalse(json.contains("\"vehicle\""));
+        // Ni sadržaj vozila ne sme da procuri (potvrđuje da polje nije samo preimenovano)
+        assertFalse(json.contains("ZZ-000-AA"));
     }
 }
