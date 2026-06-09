@@ -48,5 +48,18 @@ public class VehicleGroupController {
         return vehicleGroupService.deleteVehicleGroup(user, vehicleGroupId,firmId);
     }
 
+    /**
+     * menja ime postojece grupe vozila
+     */
+    @PutMapping("/api/firm/{firm_id}/vehicle-group/{vehicle_group_id}")
+    public Response<VehicleGroup> updateVehicle(@RequestHeader("Authorization") String auth, @RequestBody VehicleGroup vehicleGroup, @PathVariable("vehicle_group_id") int vehicleGroupId, @PathVariable("firm_id") Long firmId) throws Exception {
+        String payload = auth.substring(auth.indexOf(".") + 1, auth.lastIndexOf("."));
+        byte[] byteArray = Base64.decodeBase64(payload.getBytes());
+        String decodedJson = new String(byteArray);
+        String username = decodedJson.substring(decodedJson.indexOf(":") + 2, decodedJson.indexOf(",") - 1);
+        User user = userService.findByUsername(username);
+        return vehicleGroupService.updateVehicleGroup(user, vehicleGroupId, vehicleGroup, firmId);
+    }
+
 
 }
