@@ -117,4 +117,19 @@ public class VehicleGroupService {
         vehicleGroupRepository.deleteById(vehicleGroupId);
         return new Response<>(null);
     }
+
+    //Izmena imena grupe vozila
+    public Response<VehicleGroup> updateVehicleGroup(User user, int vehicleGroupId, VehicleGroup vehicleGroup, Long firmId) throws Exception {
+        if (user == null) {
+            throw new Exception("Bad token");
+        }
+        VehicleGroup byId = vehicleGroupRepository.findById(vehicleGroupId).orElseThrow(() -> new Exception("Vehicle group not found"));
+        if (byId.getFirm().getFirmId() != firmId) throw new Exception("Firm is not allowed to update this vehicle group");
+        byId.setName(vehicleGroup.getName());
+        VehicleGroup saved = vehicleGroupRepository.save(byId);
+        if (saved == null) {
+            throw new Exception("Failed to update vehicle group");
+        }
+        return new Response<>(saved);
+    }
 }
