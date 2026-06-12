@@ -61,6 +61,8 @@ public class NotificationVehicleService {
         try {
             ResponseEntity<String> responseEntityStr = restTemplate.postForEntity(uri, notificationVehicleId, String.class);
         } catch (Exception e) {
+            //Ako ovo padne, obrisana notifikacija ostaje u memoriji live servisa do sledeceg scheduled reload-a
+            log.error("Brisanje notifikacije nmid={} nije propagirano na live servis", notificationVehicleId, e);
         }
     }
     /**
@@ -309,7 +311,8 @@ public class NotificationVehicleService {
             //Method to send data to mongo server
             ResponseEntity<String> responseEntityStr = restTemplate.postForEntity(uri, notificationModel, String.class);
         } catch (Exception e) {
-            e.printStackTrace();
+            //Ako ovo padne, nova/izmenjena notifikacija nece raditi do sledeceg scheduled reload-a na live servisu
+            log.error("Dodavanje notifikacije nmid={} nije propagirano na live servis", notificationModel.getNmid(), e);
         }
     }
     /**
