@@ -22,6 +22,20 @@ public class AutomaticReportLoggerService {
     private final LoggerRepository loggerRepository;
     private final VehicleRepository vehicleRepository;
 
+    //Bezbedan lookup vozila po imei za potrebe logovanja. Vozila bez uredjaja imaju placeholder imei
+    //('/', '', '\') koji deli vise stotina vozila - findByImei tada baca NonUniqueResultException
+    //i obara i logovanje i slanje izvestaja. Logovanje ne sme da pukne zbog lookup-a registracije.
+    private Vehicle findVehicleForLog(String imei) {
+        if (imei == null || imei.trim().isEmpty() || "/".equals(imei.trim()) || "\\".equals(imei.trim())) {
+            return null;
+        }
+        try {
+            return vehicleRepository.findByImei(imei).orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     //Sacuvaj successfully report log
     public void saveSuccessLog(String type,String email, String[] imeis){
 
@@ -30,7 +44,7 @@ public class AutomaticReportLoggerService {
         LocalDateTime now = LocalDateTime.now();
         for (String imei : imeis) {
 
-            Vehicle vehicle = vehicleRepository.findByImei(imei).orElse(null);
+            Vehicle vehicle = findVehicleForLog(imei);
             AutomaticReportLogger automaticReportLogger = AutomaticReportLogger.builder()
                     .email(email)
                     .success(true)
@@ -48,7 +62,7 @@ public class AutomaticReportLoggerService {
 
         LocalDateTime now = LocalDateTime.now();
         for (String imei : imeis) {
-            Vehicle vehicle = vehicleRepository.findByImei(imei).orElse(null);
+            Vehicle vehicle = findVehicleForLog(imei);
 
             AutomaticReportLogger automaticReportLogger = AutomaticReportLogger.builder()
                     .email(email)
@@ -78,7 +92,7 @@ public class AutomaticReportLoggerService {
     public void saveSuccessLogTXT(String type,String email, String[] imeis){
         LocalDateTime now = LocalDateTime.now();
         for (String imei : imeis) {
-            Vehicle vehicle = vehicleRepository.findByImei(imei).orElse(null);
+            Vehicle vehicle = findVehicleForLog(imei);
             AutomaticReportLogger automaticReportLogger = AutomaticReportLogger.builder()
                     .email(email)
                     .success(true)
@@ -98,7 +112,7 @@ public class AutomaticReportLoggerService {
     public void saveFailLogTXT(String type,String email, String[] imeis,String errorMessage) {
         LocalDateTime now = LocalDateTime.now();
         for (String imei : imeis) {
-            Vehicle vehicle = vehicleRepository.findByImei(imei).orElse(null);
+            Vehicle vehicle = findVehicleForLog(imei);
             AutomaticReportLogger automaticReportLogger = AutomaticReportLogger.builder()
                     .email(email)
                     .success(false)

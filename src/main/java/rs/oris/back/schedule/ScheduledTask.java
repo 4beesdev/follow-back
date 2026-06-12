@@ -15,6 +15,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
@@ -310,8 +311,17 @@ public class ScheduledTask {
     public void updateSentTodayOnUserReport(Boolean isSentToday, UserReport userReport) {
         log.info("####################################");
         log.info(LocalDateTime.now() + " Updating isSentToday to " + isSentToday + " for UserReport ID: " + userReport.getUserReportId());
+        //Upis preko svezeg reda iz baze: save() na objektu iz snapshot-a sa pocetka sata bi red
+        //obrisan u medjuvremenu ponovo INSERT-ovao sa novim id-jem (izvestaj "uskrsne" posle brisanja)
+        Optional<UserReport> freshUserReport = userReportRepository.findById(userReport.getUserReportId());
+        if (!freshUserReport.isPresent()) {
+            log.info(LocalDateTime.now() + " UserReport ID: " + userReport.getUserReportId() + " vise ne postoji u bazi (obrisan) - preskacem upis isSentToday");
+            return;
+        }
+        UserReport dbUserReport = freshUserReport.get();
+        dbUserReport.setIsSentToday(isSentToday);
+        userReportRepository.save(dbUserReport);
         userReport.setIsSentToday(isSentToday);
-        userReportRepository.save(userReport);
     }
 
     //1 izvestaj o predjenom putu - ipp
@@ -614,7 +624,8 @@ public class ScheduledTask {
                     file = reportsController.exportDriverRelationsFuelReportInXLS(from, to, userReport.getFuelMargin(), userReport.getEmptyingMargin(), imeis,
                             userReport.getMinDistance()).getBody().getByteArray();
 
-                sendMail(userReport, file, true);
+                //Exporteri za drfr vracaju sirove bajtove (kao i case 11-16), ne base64 - dekodiranje bi puklo pre slanja
+                sendMail(userReport, file, false);
                 automaticReportLoggerService.saveSuccessLog("drfr", userReport.getEmail(), userReport.getImei());
                 LoggerFileUtil.logToFile("Uspešno kreiran izveštaj - DriverRelationsFuelReport");
             } catch (Exception e) {
@@ -797,6 +808,13 @@ public class ScheduledTask {
     private void sendMail(UserReport userReport, byte[] file, boolean toDecode) throws UnsupportedEncodingException, MessagingException {
         log.info("####################################");
         log.info(LocalDateTime.now() + " Preparing to send email to " + userReport.getEmail() + " for UserReport ID: " + userReport.getUserReportId());
+        //Lista izvestaja se ucitava na pocetku sata, a generisanje traje minutima - ako je korisnik
+        //u medjuvremenu obrisao izvestaj, ne slati ga
+        if (!userReportRepository.existsById(userReport.getUserReportId())) {
+            log.info("####################################");
+            log.info(LocalDateTime.now() + " UserReport ID: " + userReport.getUserReportId() + " obrisan u medjuvremenu - mail se ne salje");
+            return;
+        }
         if (!userReport.getEmail().contains("@")) {
             log.info("####################################");
             log.info(LocalDateTime.now() + " Invalid email address for UserReport ID: " + userReport.getUserReportId());
