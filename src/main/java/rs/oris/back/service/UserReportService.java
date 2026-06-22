@@ -40,6 +40,9 @@ import java.util.*;
 @Slf4j
 public class UserReportService {
 
+    @org.springframework.beans.factory.annotation.Value("${mail.enabled:true}")
+    private boolean mailEnabled;
+
     @Autowired
     private UserReportRepository userReportRepository;
     @Autowired
@@ -200,6 +203,10 @@ public class UserReportService {
      * slanje mejla, verujem radi testiranja
      */
     private void sendMail(String email, byte[] file) throws UnsupportedEncodingException, MessagingException {
+        if (!mailEnabled) {
+            log.info("[MAIL DISABLED] preskacem slanje report maila za {}", email);
+            return;
+        }
         file = Base64.getDecoder().decode(file);
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
@@ -526,6 +533,10 @@ public class UserReportService {
      * slanje maila s prosledjenim primaocem, naslovom i textom
      */
     public void sendMail2(String receiver, String heading, String text) throws AddressException, MessagingException, IOException {
+        if (!mailEnabled) {
+            log.info("[MAIL DISABLED] preskacem slanje notif maila za {} (subject={})", receiver, heading);
+            return;
+        }
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");

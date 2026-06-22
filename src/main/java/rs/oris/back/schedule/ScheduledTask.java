@@ -52,6 +52,10 @@ import rs.oris.back.util.DateUtil;
 @Component
 @Slf4j
 public class ScheduledTask {
+
+    @org.springframework.beans.factory.annotation.Value("${mail.enabled:true}")
+    private boolean mailEnabled;
+
     @Autowired
     private UserReportRepository userReportRepository;
     //Modul 5
@@ -731,6 +735,10 @@ public class ScheduledTask {
      * salje userreport na mail
      */
     private void sendMail(UserReport userReport, byte[] file, boolean toDecode) throws UnsupportedEncodingException, MessagingException {
+        if (!mailEnabled) {
+            log.info("[MAIL DISABLED] preskacem slanje izvestaj maila za {} (UserReport {})", userReport.getEmail(), userReport.getUserReportId());
+            return;
+        }
         log.info("####################################");
         log.info(LocalDateTime.now() + " Preparing to send email to " + userReport.getEmail() + " for UserReport ID: " + userReport.getUserReportId());
         if (!userReport.getEmail().contains("@")) {
