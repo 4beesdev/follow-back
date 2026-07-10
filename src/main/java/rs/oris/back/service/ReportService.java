@@ -2328,6 +2328,7 @@ public class ReportService {
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
         String period = "Od: " + df.format(dateFromS) + "  Do: " + df.format(dateToS);
         int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o pređenom putu", firmName, period, warningMessage);
+        int tableStartRow = rowCount;
         int cellCount = 0;
         Row row = sheet.createRow(rowCount++);
 
@@ -2420,6 +2421,8 @@ public class ReportService {
             } catch (Exception e) {
             }
         }
+
+        centerDataCells(sheet, tableStartRow);
 
         //        String s = "";
         //        Date d = new Date();
@@ -2564,6 +2567,35 @@ public class ReportService {
 
         rIdx++;
         return rIdx;
+    }
+
+    /**
+     * Centrira horizontalno sve celije tabele izvestaja, od reda sa nazivima
+     * kolona (fromRow) do poslednjeg reda. POI stilovi su deljeni izmedju
+     * celija pa se ne smeju mutirati — za svaki zateceni stil pravi se
+     * centrirani klon i kesira po indeksu stila, da se ne bi promenio header
+     * blok iznad tabele i da se ne bi napravilo previse stilova.
+     */
+    private void centerDataCells(XSSFSheet sheet, int fromRow) {
+        XSSFWorkbook wb = sheet.getWorkbook();
+        Map<Short, XSSFCellStyle> centeredStyles = new HashMap<>();
+        for (int r = fromRow; r <= sheet.getLastRowNum(); r++) {
+            Row row = sheet.getRow(r);
+            if (row == null) {
+                continue;
+            }
+            for (Cell cell : row) {
+                XSSFCellStyle source = (XSSFCellStyle) cell.getCellStyle();
+                XSSFCellStyle centered = centeredStyles.get(source.getIndex());
+                if (centered == null) {
+                    centered = wb.createCellStyle();
+                    centered.cloneStyleFrom(source);
+                    centered.setAlignment(HorizontalAlignment.CENTER);
+                    centeredStyles.put(source.getIndex(), centered);
+                }
+                cell.setCellStyle(centered);
+            }
+        }
     }
 
     /**
