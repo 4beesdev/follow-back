@@ -670,6 +670,7 @@ public class ReportService {
         DateTimeFormatter periodFmt = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         String period = "Od: " + LocalDate.parse(fromS).format(periodFmt) + "  Do: " + LocalDate.parse(toS).format(periodFmt);
         int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o relacijama vozila", firmName, period);
+        int tableStartRow = rowCount;
 
         XSSFCellStyle dateCellStyle2 = workbook.createCellStyle();
         dateCellStyle2.setFillForegroundColor(new XSSFColor(new java.awt.Color(220, 223, 227)));
@@ -1049,6 +1050,8 @@ public class ReportService {
         //            e.printStackTrace();
         //        }
 
+        centerDataCells(sheet, tableStartRow);
+
         //Ako je export 2 onda se radi pdf export
         if (export == 2) {
             return getPdf(workbook, true);
@@ -1138,6 +1141,7 @@ public class ReportService {
         DateTimeFormatter periodFmt = DateTimeFormatter.ofPattern("dd.MM.yyyy");
         String period = "Od: " + LocalDate.parse(fromS).format(periodFmt) + "  Do: " + LocalDate.parse(toS).format(periodFmt);
         int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o relacijama vozila", firmName, period, warningMessage);
+        int tableStartRow = rowCount;
         int cellCount = 0;
 
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
@@ -1485,6 +1489,8 @@ public class ReportService {
         //        } catch (Exception e) {
         //            e.printStackTrace();
         //        }
+
+        centerDataCells(sheet, tableStartRow);
 
         //Ako je export 2 onda se radi pdf export
         if (export == 2) {
