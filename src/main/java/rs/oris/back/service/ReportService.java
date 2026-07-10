@@ -3135,6 +3135,7 @@ public class ReportService {
         row.getCell(0).setCellStyle(grayStyle);
 
         // Header kolone
+        int tableStartRow = rowCount + 1;
         row = sheet.createRow(++rowCount);
         String[] headers = {"Registarski broj", "Proizvodjac/Model", "Servisna lokacija", "Datum", "Opis", "Cena", "Napomena"};
         for (int i = 0; i < headers.length; i++) {
@@ -3190,6 +3191,8 @@ public class ReportService {
 //                currentRow.setHeight((short) -1);
 //            }
 //        }
+
+        centerDataCells(sheet, tableStartRow);
 
         if (export == 2) {
             return getPdf(workbook, true);
@@ -3307,6 +3310,7 @@ public class ReportService {
 
         rowCount++;
 
+        int tableStartRow = rowCount;
         Row headerRow = sheet.createRow(rowCount++);
         String[] headers = {"Vozilo", "Gorivo", "Količina (l)", "Gorivna kompanija", "Iznos", "Gorivna stanica", "Datum", "Vozač", "Broj računa", "Kilometraža"};
         for (int i = 0; i < headers.length; i++) {
@@ -3344,6 +3348,8 @@ public class ReportService {
                 sheet.autoSizeColumn(i);
             } catch (Exception ignored) {}
         }
+
+        centerDataCells(sheet, tableStartRow);
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
@@ -3462,6 +3468,7 @@ public class ReportService {
         row.getCell(0).setCellStyle(grayStyle);
 
         // Header kolone
+        int tableStartRow = rowCount + 1;
         row = sheet.createRow(++rowCount);
         String[] headers = {"Vozilo", "Datum registracije", "Datum isteka", "Odgovorna osoba", "Iznos registracije", "Napomena"};
         for (int i = 0; i < headers.length; i++) {
@@ -3508,6 +3515,8 @@ public class ReportService {
             row.getCell(cellCount++).setCellStyle(noteStyle);
             autoResizeRow(row, sheet, workbook);
         }
+
+        centerDataCells(sheet, tableStartRow);
 
         // Ako je PDF eksport
         if (export == 2) {
