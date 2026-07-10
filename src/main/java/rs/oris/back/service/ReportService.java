@@ -4155,6 +4155,7 @@ public class ReportService {
             rowCount++;
             int cellCount = 0;
             sheet.setColumnWidth(0, 5000);
+            int tableStartRow = rowCount;
             Row row = sheet.createRow(rowCount++);
 
 
@@ -4306,6 +4307,8 @@ public class ReportService {
             //        } catch (Exception e) {
             //            e.printStackTrace();
             //        }
+            centerDataCells(sheet, tableStartRow);
+
             if (eid == 2) {
                 //Ako je eid 2 pretvori u pdf
                 return getPdf(workbook, true);
@@ -4366,6 +4369,7 @@ public class ReportService {
 
         String period = "Od: " + fromS + "  Do: " + toS;
         int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o sigurnoj vožnji", firmName, period);
+        int tableStartRow = rowCount;
         int cellCount = 0;
         Row row = sheet.createRow(rowCount++);
 
@@ -4419,6 +4423,8 @@ public class ReportService {
             } catch (Exception e) {
             }
         }
+
+        centerDataCells(sheet, tableStartRow);
 
         String s = "";
         Date d = new Date();
