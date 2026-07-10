@@ -2856,6 +2856,7 @@ public class ReportService {
 
 
         cellCount = 0;
+        int tableStartRow = rowCount + 1;
         row = sheet.createRow(++rowCount);
         row.createCell(cellCount);
         row.getCell(cellCount).setCellStyle(upperStyle);
@@ -2963,6 +2964,8 @@ public class ReportService {
         //        } catch (Exception e) {
         //            e.printStackTrace();
         //        }
+        centerDataCells(sheet, tableStartRow);
+
         if (export == 2) {
             return getPdf(workbook, true);
         }
