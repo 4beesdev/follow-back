@@ -1819,6 +1819,7 @@ public class ReportService {
         // ===== CRTANJE: NASLOV, META, TABELA =====
         String period = "Od: " + dateF + "  Do: " + dateT;
         int rIdx = addExcelReportHeader(wb, sh, "Izveštaj o prekoračenju brzine", firmName, period);
+        int tableStartRow = rIdx;
 
         String mm = (Objects.toString(veh.getManufacturer(), "") +
                 (veh.getModel()!=null && !veh.getModel().isEmpty() ? (" " + veh.getModel()) : "")).trim();
@@ -1920,6 +1921,8 @@ public class ReportService {
         setMinWidth(sh, 5, 16); // Vreme vožnje
         setMinWidth(sh, 6, 14); // Max brzina
         setMinWidth(sh, 7, 16); // Prosečna brzina
+
+        centerDataCells(sh, tableStartRow);
 
         // Izvoz
         if (export == 2) {
@@ -2165,6 +2168,7 @@ public class ReportService {
 
         // Ako želiš tačno 9 kolona (A..I) – poslednja je prazna “distancer”.
         int columnCount = 8;
+        int tableStartRow = rIdx;
         Row h = sh.createRow(rIdx++);
         h.setHeightInPoints(34);
         for (int c = 0; c < columnCount; c++) {
@@ -2245,6 +2249,8 @@ public class ReportService {
         sh.setColumnWidth(5, 11 * 256);  // Vreme vožnje
         sh.setColumnWidth(6, 10 * 256);  // Max brzina
         sh.setColumnWidth(7, 11 * 256);  // Prosečna brzina
+
+        centerDataCells(sh, tableStartRow);
 
         // ===== IZVOZ =====
         if (export == 2) {
