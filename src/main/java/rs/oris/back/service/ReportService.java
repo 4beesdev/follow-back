@@ -3637,6 +3637,7 @@ public class ReportService {
 
         String period = "Od: " + dfHeader.format(new Timestamp(dateFromS)) + "  Do: " + dfHeader.format(new Timestamp(dateToS));
         int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o povredama ruta", firmName, period);
+        int tableStartRow = rowCount;
 
         final String[] HEADERS = {
                 "Registracija", "Proizvođač / Model", "Naziv rute",
@@ -3749,6 +3750,8 @@ public class ReportService {
             uku.getCell(7).setCellValue(formatSeconds((int) (sumIdleTime / 1000)));
             uku.getCell(8).setCellValue(formatSeconds((int) (sumStoppedTime / 1000)));
         }
+
+        centerDataCells(sheet, tableStartRow);
 
         if (eid == 2) {
             return getPdf(workbook, true);
@@ -3955,6 +3958,7 @@ public class ReportService {
                 "Poč. gorivo", "Kraj. gorivo", "Razlika\ngoriva", "Vozač"
         };
 
+        int tableStartRow = rIdx;
         Row hr = sh.createRow(rIdx++);
         hr.setHeightInPoints(30);
         for (int c = 0; c < cols.length; c++) {
@@ -4025,6 +4029,8 @@ public class ReportService {
         sh.setColumnWidth(9, 9 * 256);   // Kraj. gorivo
         sh.setColumnWidth(10, 9 * 256);  // Razlika goriva
         sh.setColumnWidth(11, 14 * 256); // Vozač
+
+        centerDataCells(sh, tableStartRow);
 
         if (eid == 2) {
             return getPdf(wb, true);
