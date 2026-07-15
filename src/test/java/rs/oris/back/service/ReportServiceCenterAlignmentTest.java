@@ -10,9 +10,11 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Base64;
 
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.Test;
@@ -87,5 +89,96 @@ public class ReportServiceCenterAlignmentTest {
         } finally {
             wb.close();
         }
+    }
+
+    /**
+     * Podebljana linija ispod naslova mora da ide preko cele tabele (kolone
+     * 0-8, do "Tacnost"), kao u PDF-u: merge preko svih 9 kolona i border
+     * bottom na svakoj celiji naslova.
+     */
+    @Test
+    public void ippExportTitleUnderlineSpansAllTableColumns() throws Exception {
+        XSSFWorkbook wb = exportWorkbook();
+        try {
+            XSSFSheet sheet = wb.getSheetAt(0);
+
+            int titleRowIdx = -1;
+            for (int r = 0; r <= sheet.getLastRowNum(); r++) {
+                Row row = sheet.getRow(r);
+                if (row != null && row.getCell(0) != null
+                        && row.getCell(0).toString().startsWith("Izve")) {
+                    titleRowIdx = r;
+                    break;
+                }
+            }
+            assertTrue("Red sa naslovom nije pronadjen", titleRowIdx >= 0);
+
+            CellRangeAddress titleMerge = null;
+            for (int i = 0; i < sheet.getNumMergedRegions(); i++) {
+                CellRangeAddress region = sheet.getMergedRegion(i);
+                if (region.getFirstRow() == titleRowIdx && region.getFirstColumn() == 0) {
+                    titleMerge = region;
+                    break;
+                }
+            }
+            assertNotNull("Merge naslova nije pronadjen", titleMerge);
+            assertEquals("Merge naslova mora da ide do kolone Tacnost (8)",
+                    8, titleMerge.getLastColumn());
+
+            Row titleRow = sheet.getRow(titleRowIdx);
+            for (int col = 0; col <= 8; col++) {
+                Cell cell = titleRow.getCell(col);
+                assertNotNull("Celija naslova (" + titleRowIdx + "," + col + ") ne postoji", cell);
+                assertEquals("Celija naslova (" + titleRowIdx + "," + col + ") nema border bottom",
+                        BorderStyle.MEDIUM,
+                        cell.getCellStyle().getBorderBottomEnum());
+            }
+        } finally {
+            wb.close();
+        }
+    }
+
+    /**
+     * Izmedju reda sa nazivima kolona i prvog reda podataka ne sme da postoji
+     * prazan red.
+     */
+    @Test
+    public void ippExportHasNoBlankRowBetweenColumnHeadersAndData() throws Exception {
+        XSSFWorkbook wb = exportWorkbook();
+        try {
+            XSSFSheet sheet = wb.getSheetAt(0);
+
+            int tableHeaderRow = -1;
+            for (int r = 0; r <= sheet.getLastRowNum(); r++) {
+                Row row = sheet.getRow(r);
+                if (row != null && row.getCell(0) != null
+                        && "Reg.".equals(row.getCell(0).toString())) {
+                    tableHeaderRow = r;
+                    break;
+                }
+            }
+            assertTrue("Red sa nazivima kolona nije pronadjen", tableHeaderRow >= 0);
+
+            Row firstDataRow = sheet.getRow(tableHeaderRow + 1);
+            assertNotNull("Prazan red izmedju naziva kolona i podataka", firstDataRow);
+            assertNotNull("Prvi red podataka nema registraciju", firstDataRow.getCell(0));
+            assertEquals("SA 180-RD", firstDataRow.getCell(0).toString());
+        } finally {
+            wb.close();
+        }
+    }
+
+    private XSSFWorkbook exportWorkbook() throws Exception {
+        ReportService service = new ReportService();
+        ArrayList<Ipp> list = new ArrayList<>();
+        list.add(new Ipp("SA 180-RD", "Express", "Teretno", "Renault", 20.43, 84086, 303, 2009, 100, 19.95));
+        list.add(new Ipp("SA 181-GN", "Fiorino", "Teretno", "Fiat", 49.22, 77247, 2566, 6571, 100, 16.18));
+
+        byte[] encoded = service.ippExport(list, 1,
+                new Timestamp(1752098400000L), new Timestamp(1752184800000L), "Test Firma");
+        assertNotNull(encoded);
+
+        byte[] xlsx = Base64.getDecoder().decode(encoded);
+        return new XSSFWorkbook(new ByteArrayInputStream(xlsx));
     }
 }

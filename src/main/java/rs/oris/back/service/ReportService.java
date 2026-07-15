@@ -2340,6 +2340,32 @@ public class ReportService {
         SimpleDateFormat df = new SimpleDateFormat("dd.MM.yyyy HH:mm");
         String period = "Od: " + df.format(dateFromS) + "  Do: " + df.format(dateToS);
         int rowCount = addExcelReportHeader(workbook, sheet, "Izveštaj o pređenom putu", firmName, period, warningMessage);
+
+        // proširi border bottom title reda preko cele tabele (kolone 0-8, do "Tačnost").
+        // addExcelReportHeader pravi merge 0-7 sa borderBottom samo na ćeliji 0, pa
+        // vizuelno linija ne ide do kraja tabele kao u PDF-u. Uklanjamo stari merge,
+        // postavljamo border na svaku ćeliju 0..8, pa dodajemo novi merge preko cele širine.
+        int titleRowIdx = 4;
+        int totalCols = 9;
+        Row titleRow = sheet.getRow(titleRowIdx);
+        if (titleRow != null && titleRow.getCell(0) != null) {
+            for (int i = sheet.getNumMergedRegions() - 1; i >= 0; i--) {
+                CellRangeAddress region = sheet.getMergedRegion(i);
+                if (region.getFirstRow() == titleRowIdx && region.getFirstColumn() == 0) {
+                    sheet.removeMergedRegion(i);
+                    break;
+                }
+            }
+            XSSFCellStyle titleCellStyle = (XSSFCellStyle) titleRow.getCell(0).getCellStyle();
+            for (int col = 0; col < totalCols; col++) {
+                if (titleRow.getCell(col) == null) {
+                    titleRow.createCell(col);
+                }
+                titleRow.getCell(col).setCellStyle(titleCellStyle);
+            }
+            sheet.addMergedRegion(new CellRangeAddress(titleRowIdx, titleRowIdx, 0, totalCols - 1));
+        }
+
         int tableStartRow = rowCount;
         int cellCount = 0;
         Row row = sheet.createRow(rowCount++);
@@ -2373,7 +2399,6 @@ public class ReportService {
         row.getCell(cellCount).setCellStyle(upperStyle);
         row.getCell(cellCount++).setCellValue("Tačnost");
 
-        rowCount++;
         cellCount = 0;
 
         DataFormat dataFormat = workbook.createDataFormat();
