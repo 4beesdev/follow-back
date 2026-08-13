@@ -2101,7 +2101,7 @@ public class ReportController {
      * @throws Exception ako je los unos datuma ili vozilo ne postoji
      */
     @GetMapping("api/firm/{firm_id}/report/intervention/vehicle/{vehicle_id}/from/{from}/to/{to}")
-    private Response<List<Intervention>> getFromDateToDateIntervention(@PathVariable("vehicle_id") int vehicleId, @PathVariable("from") String dateFromS,
+    private Response<List<InterventionDTO>> getFromDateToDateIntervention(@PathVariable("vehicle_id") int vehicleId, @PathVariable("from") String dateFromS,
             @PathVariable("to") String dateToS) throws Exception {
         Date dateFrom = null;
         try {
@@ -2151,7 +2151,7 @@ public class ReportController {
         } catch (Exception e) {
             throw new Exception("Bad request");
         }
-        List<Intervention> interventions = reportService.findInterventionsForIds(dateFrom, dateTo, vehicleIds);
+        List<InterventionDTO> interventions = reportService.findInterventionsForIds(dateFrom, dateTo, vehicleIds);
         return reportService.interventionExport(interventions, export, dateFrom, dateTo);
     }
 

@@ -44,6 +44,7 @@ import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.transaction.annotation.Transactional;
 import rs.oris.back.controller.wrapper.Response;
 import rs.oris.back.domain.*;
 import rs.oris.back.domain.dto.DTORotue;
@@ -3079,22 +3080,26 @@ public class ReportService {
      * @return lista intervencija
      * @throws Exception ako vozilo ne postoji
      */
-    public Response<List<Intervention>> findIntervention(Date dateFrom, Date dateTo, int vehicleId) throws Exception {
+    @Transactional(readOnly = true)
+    public Response<List<InterventionDTO>> findIntervention(Date dateFrom, Date dateTo, int vehicleId) throws Exception {
         Optional<Vehicle> optionalVehicle = vehicleRepository.findById(vehicleId);
         if (!optionalVehicle.isPresent()) {
             throw new Exception("Invalid vehicle id");
         }
 
-        List<Intervention> list = interventionRepository.findByVehicleVehicleIdAndDoneDateBetween(vehicleId, dateFrom, dateTo);
+        List<InterventionDTO> list = interventionRepository.findByVehicleVehicleIdAndDoneDateBetween(vehicleId, dateFrom, dateTo)
+                .stream().map(InterventionDTO::from).collect(Collectors.toList());
         return new Response<>(list);
 
     }
 
-    public List<Intervention> findInterventionsForIds(Date dateFrom, Date dateTo, List<Integer> vehicleIds) throws Exception {
-        return interventionRepository.findByVehicleVehicleIdInAndDoneDateBetween(vehicleIds, dateFrom, dateTo);
+    @Transactional(readOnly = true)
+    public List<InterventionDTO> findInterventionsForIds(Date dateFrom, Date dateTo, List<Integer> vehicleIds) throws Exception {
+        return interventionRepository.findByVehicleVehicleIdInAndDoneDateBetween(vehicleIds, dateFrom, dateTo)
+                .stream().map(InterventionDTO::from).collect(Collectors.toList());
     }
 
-    public byte[] interventionExport(List<Intervention> interventions, int export, Date dateFrom, Date dateTo) throws Exception {
+    public byte[] interventionExport(List<InterventionDTO> interventions, int export, Date dateFrom, Date dateTo) throws Exception {
         XSSFWorkbook workbook = new XSSFWorkbook();
         XSSFSheet sheet = workbook.createSheet("Interventions");
 
@@ -3181,7 +3186,7 @@ public class ReportService {
         sheet.setColumnWidth(6, 15 * 256); // Napomena - uža, wrap-ovana
 
         // Podaci
-        for (Intervention intervention : interventions) {
+        for (InterventionDTO intervention : interventions) {
             row = sheet.createRow(++rowCount);
             int cellCount = 0;
 
